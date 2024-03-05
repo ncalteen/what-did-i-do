@@ -17,7 +17,9 @@ async function run() {
   const emuTokens =
     core.getInput('emuTokens') !== ''
       ? core.getInput('emuTokens').split(',')
-      : process.env.EMU_TOKENS.split(',')
+      : process.env.EMU_TOKENS !== undefined
+      ? process.env.EMU_TOKENS.split(',')
+      : []
 
   // Number of days back to query
   const numberOfDays =
