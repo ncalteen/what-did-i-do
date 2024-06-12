@@ -1,0 +1,67 @@
+env:
+  node: true
+  es6: true
+  jest: true
+
+globals:
+  __non_webpack_require__: readonly
+  Atomics: readonly
+  NodeRequire: readonly
+  SharedArrayBuffer: readonly
+
+ignorePatterns:
+  - '**/.github/**'
+  - '**/.vscode/**'
+  - '**/coverage/**'
+  - '**/dist/**'
+  - '**/node_modules/**'
+  - '**/reports/**'
+  - '*.json'
+
+parser: '@typescript-eslint/parser'
+
+parserOptions:
+  ecmaVersion: 2023
+  project: tsconfig.eslint.json
+  tsconfigRootDir: .
+
+plugins:
+  - import
+  - jest
+  - '@typescript-eslint'
+
+extends:
+  - eslint:recommended
+  - plugin:@typescript-eslint/eslint-recommended
+  - plugin:@typescript-eslint/recommended-requiring-type-checking
+  - plugin:@typescript-eslint/recommended
+  - plugin:github/recommended
+  - plugin:import/typescript
+  - plugin:jest/recommended
+
+rules:
+  {
+    '@typescript-eslint/no-explicit-any': 'off',
+    '@typescript-eslint/no-redundant-type-constituents': 'off',
+    '@typescript-eslint/no-unsafe-argument': 'off',
+    '@typescript-eslint/no-unsafe-assignment': 'off',
+    '@typescript-eslint/no-unsafe-call': 'off',
+    '@typescript-eslint/no-unsafe-enum-comparison': 'off',
+    '@typescript-eslint/no-unsafe-member-access': 'off',
+    '@typescript-eslint/no-unsafe-return': 'off',
+    '@typescript-eslint/no-var-requires': 'warn',
+    'camelcase': 'off',
+    'eslint-comments/no-use': 'off',
+    'i18n-text/no-en': 'off',
+    'import/extensions': 'off',
+    'import/no-namespace': 'off',
+    'no-unused-vars': 'off',
+    'no-shadow': 'off',
+    'prettier/prettier': 'error'
+  }
+
+settings:
+  import/resolver:
+    typescript:
+      alwaysTryTypes: true
+      project: tsconfig.eslint.json
