@@ -1,5 +1,6 @@
 import * as fs from 'fs'
 import mustache from 'mustache'
+import * as path from 'path'
 import type {
   Contributions,
   IssueSummary,
@@ -49,7 +50,10 @@ export function generateMarkdown(
   }
 
   return mustache.render(
-    fs.readFileSync('./templates/issue.mustache', 'utf-8'),
+    fs.readFileSync(
+      path.resolve(__dirname, '../templates/issue.mustache'),
+      'utf-8'
+    ),
     context
   )
 }

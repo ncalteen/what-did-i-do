@@ -1,17 +1,17 @@
 {
-  "name": "project-summary",
+  "name": "what-did-i-do",
   "version": "1.0.0",
   "author": "Nick Alteen <ncalteen@github.com>",
   "description": "A GitHub Action to generate a summary of your GitHub activity.",
   "private": true,
   "type": "module",
-  "homepage": "https://github.com/ncalteen/project-summary#readme",
+  "homepage": "https://github.com/ncalteen/what-did-i-do#readme",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/ncalteen/project-summary.git"
+    "url": "git+https://github.com/ncalteen/what-did-i-do.git"
   },
   "bugs": {
-    "url": "https://github.com/ncalteen/project-summary/issues"
+    "url": "https://github.com/ncalteen/what-did-i-do/issues"
   },
   "engines": {
     "node": ">=20"

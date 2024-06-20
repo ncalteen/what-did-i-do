@@ -32037,7 +32037,10 @@ mustache.Writer = Writer;
 
 /* harmony default export */ const mustache_mustache = (mustache);
 
+// EXTERNAL MODULE: external "path"
+var external_path_ = __nccwpck_require__(1017);
 ;// CONCATENATED MODULE: ./src/render.ts
+
 
 
 /**
@@ -32070,7 +32073,7 @@ function generateMarkdown(contributions, endDate, startDate, username) {
         },
         username
     };
-    return mustache_mustache.render(external_fs_.readFileSync('./templates/issue.mustache', 'utf-8'), context);
+    return mustache_mustache.render(external_fs_.readFileSync(__nccwpck_require__.ab + "issue.mustache", 'utf-8'), context);
 }
 /**
  * Generates the repository summary to pass to the template renderer.
