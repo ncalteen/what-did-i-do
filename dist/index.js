@@ -32547,6 +32547,7 @@ async function getPullRequestReviewContributionsByRepository(octokit, username, 
 async function createIssue(body, octokit, repository, username, projectNumber) {
     const title = `GitHub Contributions (${new Date().toISOString().substring(0, 10)})`;
     const [owner, name] = repository.split('/');
+    core.info(`Creating issue in ${owner}/${name}`);
     // Get the GraphQL node ID of the user, repository, and project
     const userId = await getUserNodeId(octokit, username);
     const projectId = await getProjectNodeId(octokit, owner, projectNumber);

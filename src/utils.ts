@@ -476,6 +476,7 @@ export async function createIssue(
 ) {
   const title = `GitHub Contributions (${new Date().toISOString().substring(0, 10)})`
   const [owner, name] = repository.split('/')
+  core.info(`Creating issue in ${owner}/${name}`)
 
   // Get the GraphQL node ID of the user, repository, and project
   const userId = await graphql.getUserNodeId(octokit, username)
