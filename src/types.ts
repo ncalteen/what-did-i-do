@@ -268,7 +268,7 @@ export type PullRequestReviewContributionsByRepository = {
 
 /** Issue Summary */
 export type IssueSummary = {
-  createdAt: Date
+  createdAt: string
   number: number
   repository: string
   repositoryUrl: string
@@ -280,7 +280,7 @@ export type IssueSummary = {
 /** Pull Request Summary */
 export type PullRequestSummary = {
   changedFiles: number
-  createdAt: Date
+  createdAt: string
   number: number
   repository: string
   repositoryUrl: string
@@ -291,7 +291,7 @@ export type PullRequestSummary = {
 
 /** Pull Request Review Summary */
 export type PullRequestReviewSummary = {
-  createdAt: Date
+  createdAt: string
   number: number
   repository: string
   repositoryUrl: string

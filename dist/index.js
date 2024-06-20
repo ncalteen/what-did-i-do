@@ -32119,7 +32119,7 @@ function generateIssueSummary(contributions) {
     for (const [key, value] of Object.entries(contributions.issueContributionsByRepository)) {
         for (const element of value.contributions) {
             issues.push({
-                createdAt: element.createdAt,
+                createdAt: element.createdAt.toISOString().substring(0, 10),
                 number: element.number,
                 repository: key,
                 repositoryUrl: value.url,
@@ -32153,7 +32153,7 @@ function generatePullRequestSummary(contributions) {
         for (const element of value.contributions) {
             pullRequests.push({
                 changedFiles: element.changedFiles,
-                createdAt: element.createdAt,
+                createdAt: element.createdAt.toISOString().substring(0, 10),
                 number: element.number,
                 repository: key,
                 repositoryUrl: value.url,
@@ -32186,7 +32186,7 @@ function generatePullRequestReviewSummary(contributions) {
     for (const [key, value] of Object.entries(contributions.pullRequestContributionsByRepository)) {
         for (const element of value.contributions) {
             pullRequestReviews.push({
-                createdAt: element.createdAt,
+                createdAt: element.createdAt.toISOString().substring(0, 10),
                 number: element.number,
                 repository: key,
                 repositoryUrl: value.url,
