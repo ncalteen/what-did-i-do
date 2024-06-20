@@ -32604,7 +32604,7 @@ async function run() {
     // Generate markdown from the template
     const body = generateMarkdown(contributions, endDate, startDate, username);
     // Write the output to a new issue and assign to the project
-    await createIssue(body, octokit, repository, username, projectNumber);
+    await createIssue(body, octokit, `${owner}/${repository}`, username, projectNumber);
 }
 
 ;// CONCATENATED MODULE: ./src/index.ts

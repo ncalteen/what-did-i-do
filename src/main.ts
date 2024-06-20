@@ -57,5 +57,11 @@ export async function run() {
   )
 
   // Write the output to a new issue and assign to the project
-  await utils.createIssue(body, octokit, repository, username, projectNumber)
+  await utils.createIssue(
+    body,
+    octokit,
+    `${owner}/${repository}`,
+    username,
+    projectNumber
+  )
 }
