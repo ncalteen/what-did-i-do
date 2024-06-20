@@ -31189,6 +31189,7 @@ const CREATE_ISSUE = `
  */
 async function getAuthenticatedUser(octokit) {
     const response = await octokit.graphql(AUTHENTICATED_USER);
+    core.info(`[AUTHENTICATED_USER]: ${response.viewer.login}`);
     return response.viewer.login;
 }
 /**
@@ -31199,9 +31200,11 @@ async function getAuthenticatedUser(octokit) {
  * @returns The GraphQL node ID of the user.
  */
 async function getUserNodeId(octokit, username) {
+    core.info(`[USER_NODE_ID]: ${username}`);
     const response = await octokit.request('GET /users/:username', {
         username
     });
+    core.info(`[USER_NODE_ID]: ${response.data.node_id}`);
     return response.data.node_id;
 }
 /**
@@ -31215,6 +31218,7 @@ async function getUserNodeId(octokit, username) {
  * @returns The global ID of the project or undefined if it wasn't found.
  */
 async function getProjectNodeId(octokit, owner, projectNumber) {
+    core.info(`[PROJECT_NODE_ID]: ${owner} ${projectNumber}`);
     if (projectNumber === undefined)
         return undefined;
     try {
@@ -31257,6 +31261,7 @@ async function getProjectNodeId(octokit, owner, projectNumber) {
  * @returns The node ID of the repository.
  */
 async function getRepositoryNodeId(octokit, owner, name) {
+    core.info(`[REPOSITORY_NODE_ID]: ${owner}/${name}`);
     const response = await octokit.graphql(REPOSITORY_NODE_ID, {
         owner,
         name
