@@ -10,9 +10,7 @@ import * as queries from './queries.js'
  * @returns The username of the authenticated user.
  */
 export async function getAuthenticatedUser(octokit: any): Promise<string> {
-  const response = await octokit.graphql({
-    query: queries.AUTHENTICATED_USER
-  })
+  const response = await octokit.graphql(queries.AUTHENTICATED_USER)
 
   return response.viewer.login
 }
@@ -54,8 +52,7 @@ export async function getProjectNodeId(
 
   try {
     // Try to get the project from the organization
-    const response = await octokit.graphql({
-      query: queries.ORG_PROJECT_NODE_ID,
+    const response = await octokit.graphql(queries.ORG_PROJECT_NODE_ID, {
       organization: owner,
       projectNumber
     })
@@ -71,8 +68,7 @@ export async function getProjectNodeId(
 
   try {
     // Try to get the project from the user
-    const response = await octokit.graphql({
-      query: queries.USER_PROJECT_NODE_ID,
+    const response = await octokit.graphql(queries.USER_PROJECT_NODE_ID, {
       login: owner,
       projectNumber
     })
@@ -103,8 +99,7 @@ export async function getRepositoryNodeId(
   owner: string,
   name: string
 ): Promise<string> {
-  const response = await octokit.graphql({
-    query: queries.REPOSITORY_NODE_ID,
+  const response = await octokit.graphql(queries.REPOSITORY_NODE_ID, {
     owner,
     name
   })

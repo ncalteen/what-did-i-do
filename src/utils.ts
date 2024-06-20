@@ -51,8 +51,7 @@ export async function getContributions(
 
     // Get contributions for this user with this client
     const clientContributions: GraphQLTotalContributions =
-      await octokit.graphql({
-        query: queries.TOTAL_CONTRIBUTION_COUNT,
+      await octokit.graphql(queries.TOTAL_CONTRIBUTION_COUNT, {
         username,
         startDate
       })
@@ -150,8 +149,7 @@ export async function getIssueContributionsByRepository(
 
   let endCursor: string | undefined = undefined
   let issueContributions: GraphQLIssueContributionsByRepository =
-    await octokit.graphql({
-      query: queries.ISSUE_CONTRIBUTIONS_BY_REPOSITORY,
+    await octokit.graphql(queries.ISSUE_CONTRIBUTIONS_BY_REPOSITORY, {
       username,
       startDate,
       endCursor
@@ -195,12 +193,14 @@ export async function getIssueContributionsByRepository(
         (element) => element.contributions.pageInfo.hasNextPage
       )?.contributions.pageInfo.endCursor
 
-    issueContributions = await octokit.graphql({
-      query: queries.ISSUE_CONTRIBUTIONS_BY_REPOSITORY,
-      username,
-      startDate,
-      endCursor
-    })
+    issueContributions = await octokit.graphql(
+      queries.ISSUE_CONTRIBUTIONS_BY_REPOSITORY,
+      {
+        username,
+        startDate,
+        endCursor
+      }
+    )
 
     for (const element of issueContributions.user.contributionsCollection
       .issueContributionsByRepository) {
@@ -246,8 +246,7 @@ export async function getPullRequestContributionsByRepository(
 
   let endCursor: string | undefined = undefined
   let pullRequestContributions: GraphQLPullRequestContributionsByRepository =
-    await octokit.graphql({
-      query: queries.PULL_REQUEST_CONTRIBUTIONS_BY_REPOSITORY,
+    await octokit.graphql(queries.PULL_REQUEST_CONTRIBUTIONS_BY_REPOSITORY, {
       username,
       startDate,
       endCursor
@@ -295,12 +294,14 @@ export async function getPullRequestContributionsByRepository(
         (element) => element.contributions.pageInfo.hasNextPage
       )?.contributions.pageInfo.endCursor
 
-    pullRequestContributions = await octokit.graphql({
-      query: queries.PULL_REQUEST_CONTRIBUTIONS_BY_REPOSITORY,
-      username,
-      startDate,
-      endCursor
-    })
+    pullRequestContributions = await octokit.graphql(
+      queries.PULL_REQUEST_CONTRIBUTIONS_BY_REPOSITORY,
+      {
+        username,
+        startDate,
+        endCursor
+      }
+    )
 
     for (const element of pullRequestContributions.user.contributionsCollection
       .pullRequestContributionsByRepository) {
@@ -355,12 +356,14 @@ export async function getPullRequestReviewContributionsByRepository(
 
   let endCursor: string | undefined = undefined
   let pullRequestReviewContributions: GraphQLPullRequestReviewContributionsByRepository =
-    await octokit.graphql({
-      query: queries.PULL_REQUEST_REVIEW_CONTRIBUTIONS_BY_REPOSITORY,
-      username,
-      startDate,
-      endCursor
-    })
+    await octokit.graphql(
+      queries.PULL_REQUEST_REVIEW_CONTRIBUTIONS_BY_REPOSITORY,
+      {
+        username,
+        startDate,
+        endCursor
+      }
+    )
 
   for (const element of pullRequestReviewContributions.user
     .contributionsCollection.pullRequestReviewContributionsByRepository) {
@@ -410,12 +413,14 @@ export async function getPullRequestReviewContributionsByRepository(
         (element) => element.contributions.pageInfo.hasNextPage
       )?.contributions.pageInfo.endCursor
 
-    pullRequestReviewContributions = await octokit.graphql({
-      query: queries.PULL_REQUEST_REVIEW_CONTRIBUTIONS_BY_REPOSITORY,
-      username,
-      startDate,
-      endCursor
-    })
+    pullRequestReviewContributions = await octokit.graphql(
+      queries.PULL_REQUEST_REVIEW_CONTRIBUTIONS_BY_REPOSITORY,
+      {
+        username,
+        startDate,
+        endCursor
+      }
+    )
 
     for (const element of pullRequestReviewContributions.user
       .contributionsCollection.pullRequestReviewContributionsByRepository) {
@@ -481,8 +486,7 @@ export async function createIssue(
   )
   const repositoryId = await graphql.getRepositoryNodeId(octokit, owner, name)
 
-  const response = await octokit.graphql({
-    query: queries.CREATE_ISSUE,
+  const response = await octokit.graphql(queries.CREATE_ISSUE, {
     userId,
     repositoryId,
     body,
@@ -490,8 +494,7 @@ export async function createIssue(
   })
 
   if (projectId)
-    await octokit.graphql({
-      query: queries.ADD_ISSUE_TO_PROJECT,
+    await octokit.graphql(queries.ADD_ISSUE_TO_PROJECT, {
       projectId,
       issueId: response.createIssue.issue.id
     })

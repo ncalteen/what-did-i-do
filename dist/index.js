@@ -31188,9 +31188,7 @@ const CREATE_ISSUE = `
  * @returns The username of the authenticated user.
  */
 async function getAuthenticatedUser(octokit) {
-    const response = await octokit.graphql({
-        query: AUTHENTICATED_USER
-    });
+    const response = await octokit.graphql(AUTHENTICATED_USER);
     return response.viewer.login;
 }
 /**
@@ -31221,8 +31219,7 @@ async function getProjectNodeId(octokit, owner, projectNumber) {
         return undefined;
     try {
         // Try to get the project from the organization
-        const response = await octokit.graphql({
-            query: ORG_PROJECT_NODE_ID,
+        const response = await octokit.graphql(ORG_PROJECT_NODE_ID, {
             organization: owner,
             projectNumber
         });
@@ -31236,8 +31233,7 @@ async function getProjectNodeId(octokit, owner, projectNumber) {
     }
     try {
         // Try to get the project from the user
-        const response = await octokit.graphql({
-            query: USER_PROJECT_NODE_ID,
+        const response = await octokit.graphql(USER_PROJECT_NODE_ID, {
             login: owner,
             projectNumber
         });
@@ -31261,8 +31257,7 @@ async function getProjectNodeId(octokit, owner, projectNumber) {
  * @returns The node ID of the repository.
  */
 async function getRepositoryNodeId(octokit, owner, name) {
-    const response = await octokit.graphql({
-        query: REPOSITORY_NODE_ID,
+    const response = await octokit.graphql(REPOSITORY_NODE_ID, {
         owner,
         name
     });
@@ -32245,8 +32240,7 @@ async function getContributions(tokens, startDate) {
         // Get the authenticated user
         const username = await getAuthenticatedUser(octokit);
         // Get contributions for this user with this client
-        const clientContributions = await octokit.graphql({
-            query: TOTAL_CONTRIBUTION_COUNT,
+        const clientContributions = await octokit.graphql(TOTAL_CONTRIBUTION_COUNT, {
             username,
             startDate
         });
@@ -32307,8 +32301,7 @@ async function getContributions(tokens, startDate) {
 async function getIssueContributionsByRepository(octokit, username, startDate) {
     const issueContributionsByRepository = {};
     let endCursor = undefined;
-    let issueContributions = await octokit.graphql({
-        query: ISSUE_CONTRIBUTIONS_BY_REPOSITORY,
+    let issueContributions = await octokit.graphql(ISSUE_CONTRIBUTIONS_BY_REPOSITORY, {
         username,
         startDate,
         endCursor
@@ -32343,8 +32336,7 @@ async function getIssueContributionsByRepository(octokit, username, startDate) {
     while (issueContributions.user.contributionsCollection.issueContributionsByRepository.some((element) => element.contributions.pageInfo.hasNextPage)) {
         endCursor =
             issueContributions.user.contributionsCollection.issueContributionsByRepository.find((element) => element.contributions.pageInfo.hasNextPage)?.contributions.pageInfo.endCursor;
-        issueContributions = await octokit.graphql({
-            query: ISSUE_CONTRIBUTIONS_BY_REPOSITORY,
+        issueContributions = await octokit.graphql(ISSUE_CONTRIBUTIONS_BY_REPOSITORY, {
             username,
             startDate,
             endCursor
@@ -32380,8 +32372,7 @@ async function getIssueContributionsByRepository(octokit, username, startDate) {
 async function getPullRequestContributionsByRepository(octokit, username, startDate) {
     const pullRequestContributionsByRepository = {};
     let endCursor = undefined;
-    let pullRequestContributions = await octokit.graphql({
-        query: PULL_REQUEST_CONTRIBUTIONS_BY_REPOSITORY,
+    let pullRequestContributions = await octokit.graphql(PULL_REQUEST_CONTRIBUTIONS_BY_REPOSITORY, {
         username,
         startDate,
         endCursor
@@ -32419,8 +32410,7 @@ async function getPullRequestContributionsByRepository(octokit, username, startD
     while (pullRequestContributions.user.contributionsCollection.pullRequestContributionsByRepository.some((element) => element.contributions.pageInfo.hasNextPage)) {
         endCursor =
             pullRequestContributions.user.contributionsCollection.pullRequestContributionsByRepository.find((element) => element.contributions.pageInfo.hasNextPage)?.contributions.pageInfo.endCursor;
-        pullRequestContributions = await octokit.graphql({
-            query: PULL_REQUEST_CONTRIBUTIONS_BY_REPOSITORY,
+        pullRequestContributions = await octokit.graphql(PULL_REQUEST_CONTRIBUTIONS_BY_REPOSITORY, {
             username,
             startDate,
             endCursor
@@ -32464,8 +32454,7 @@ async function getPullRequestContributionsByRepository(octokit, username, startD
 async function getPullRequestReviewContributionsByRepository(octokit, username, startDate) {
     const pullRequestReviewContributionsByRepository = {};
     let endCursor = undefined;
-    let pullRequestReviewContributions = await octokit.graphql({
-        query: PULL_REQUEST_REVIEW_CONTRIBUTIONS_BY_REPOSITORY,
+    let pullRequestReviewContributions = await octokit.graphql(PULL_REQUEST_REVIEW_CONTRIBUTIONS_BY_REPOSITORY, {
         username,
         startDate,
         endCursor
@@ -32507,8 +32496,7 @@ async function getPullRequestReviewContributionsByRepository(octokit, username, 
     while (pullRequestReviewContributions.user.contributionsCollection.pullRequestReviewContributionsByRepository.some((element) => element.contributions.pageInfo.hasNextPage)) {
         endCursor =
             pullRequestReviewContributions.user.contributionsCollection.pullRequestReviewContributionsByRepository.find((element) => element.contributions.pageInfo.hasNextPage)?.contributions.pageInfo.endCursor;
-        pullRequestReviewContributions = await octokit.graphql({
-            query: PULL_REQUEST_REVIEW_CONTRIBUTIONS_BY_REPOSITORY,
+        pullRequestReviewContributions = await octokit.graphql(PULL_REQUEST_REVIEW_CONTRIBUTIONS_BY_REPOSITORY, {
             username,
             startDate,
             endCursor
@@ -32558,16 +32546,14 @@ async function createIssue(body, octokit, repository, username, projectNumber) {
     const userId = await getUserNodeId(octokit, username);
     const projectId = await getProjectNodeId(octokit, owner, projectNumber);
     const repositoryId = await getRepositoryNodeId(octokit, owner, name);
-    const response = await octokit.graphql({
-        query: CREATE_ISSUE,
+    const response = await octokit.graphql(CREATE_ISSUE, {
         userId,
         repositoryId,
         body,
         title
     });
     if (projectId)
-        await octokit.graphql({
-            query: ADD_ISSUE_TO_PROJECT,
+        await octokit.graphql(ADD_ISSUE_TO_PROJECT, {
             projectId,
             issueId: response.createIssue.issue.id
         });
