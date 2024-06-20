@@ -1,5 +1,5 @@
-name: GitHub Contribution summary
-description: Generates a summary of your GitHub contributions
+name: GitHub Contribution Summary
+description: Generates a summary of your GitHub contributions as an issue
 branding:
   icon: book
   color: blue
@@ -8,25 +8,28 @@ inputs:
   token:
     description: GitHub.com token for authentication.
     required: true
-  emuTokens:
+    default: ${{ github.token }}
+  other_tokens:
     description:
-      A comma-separated list of additional GitHub tokens for authentication.
-      These are used to authenticate to GitHub Enterprise Cloud - Enterprise
-      Managed User instance(s).
-    required: true
-  numberOfDays:
+      A comma-separated list of additional GitHub tokens for authentication. For
+      example, if you have separate account(s) for GitHub Enterprise Cloud -
+      Enterprise Managed User instance(s).
+    required: false
+  num_days:
     description: The number of days to look back. Defaults to 14.
-    required: false
-  owner:
-    description:
-      The owner (user or organization) to create the summary issue in.
-    required: false
+    required: true
+    default: '14'
   repository:
-    description: The repository to create the summary issue in.
+    description:
+      'The owner and repository to create the summary issue in. Defaults to the
+      repository where this action is invoked. Format: `owner/repo.` If you want
+      to create the issue in a different repository than the one where you are
+      running this action, ensure the `token` input has sufficient permissions.'
     required: true
-  projectNumber:
-    description: The project to create the summary issue in.
-    required: true
+    default: ${{ github.repository }}
+  project_number:
+    description: (Optional) The project number to create the summary issue in.
+    required: false
 
 runs:
   using: node20

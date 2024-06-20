@@ -10,13 +10,12 @@ globals:
   SharedArrayBuffer: readonly
 
 ignorePatterns:
-  - '**/.github/**'
-  - '**/.vscode/**'
-  - '**/coverage/**'
-  - '**/dist/**'
-  - '**/node_modules/**'
-  - '**/reports/**'
-  - '*.json'
+  - .github
+  - .vscode
+  - coverage
+  - dist
+  - node_modules
+  - reports
 
 parser: '@typescript-eslint/parser'
 
@@ -40,25 +39,23 @@ extends:
   - plugin:jest/recommended
 
 rules:
-  {
-    '@typescript-eslint/no-explicit-any': 'off',
-    '@typescript-eslint/no-redundant-type-constituents': 'off',
-    '@typescript-eslint/no-unsafe-argument': 'off',
-    '@typescript-eslint/no-unsafe-assignment': 'off',
-    '@typescript-eslint/no-unsafe-call': 'off',
-    '@typescript-eslint/no-unsafe-enum-comparison': 'off',
-    '@typescript-eslint/no-unsafe-member-access': 'off',
-    '@typescript-eslint/no-unsafe-return': 'off',
-    '@typescript-eslint/no-var-requires': 'warn',
-    'camelcase': 'off',
-    'eslint-comments/no-use': 'off',
-    'i18n-text/no-en': 'off',
-    'import/extensions': 'off',
-    'import/no-namespace': 'off',
-    'no-unused-vars': 'off',
-    'no-shadow': 'off',
-    'prettier/prettier': 'error'
-  }
+  '@typescript-eslint/no-explicit-any': off
+  '@typescript-eslint/no-redundant-type-constituents': off
+  '@typescript-eslint/no-unsafe-argument': off
+  '@typescript-eslint/no-unsafe-assignment': off
+  '@typescript-eslint/no-unsafe-call': off
+  '@typescript-eslint/no-unsafe-enum-comparison': off
+  '@typescript-eslint/no-unsafe-member-access': off
+  '@typescript-eslint/no-unsafe-return': off
+  '@typescript-eslint/no-var-requires': warn
+  camelcase: off
+  eslint-comments/no-use: off
+  i18n-text/no-en: off
+  import/extensions: off
+  import/no-namespace: off
+  no-unused-vars: off
+  no-shadow: off
+  prettier/prettier: error
 
 settings:
   import/resolver:

@@ -1,49 +1,30 @@
-# Project Summary Action
+# _What did I do?_ GitHub Action
 
-This action helps track personal tasks in GitHub. It's designed to generate a
-file that contains a summary of completed issues in a certain time period.
+This action helps track a user's work in GitHub. It's designed to generate an
+issue that contains a summary of contributions on GitHub.com over a certain time
+period.
 
 ## Inputs
 
-### `token`
+| Name             | Default                       | Description                                                         |
+| ---------------- | ----------------------------- | ------------------------------------------------------------------- |
+| `token`          | `${{ secrets.GITHUB_TOKEN }}` | GitHub.com authentication token                                     |
+| `other_tokens`   |                               | Comma-separated list of additional GitHub.com tokens                |
+| `num_days`       | `14`                          | Number of days to look back                                         |
+| `repository`     | `${{ github.repository }}`    | The repository to create the summary issue in (`owner/name` format) |
+| `project_number` |                               | (Optional) GitHub project number to add the issue to.               |
 
-**Required** (String) The GitHub.com token used for authentication.
+> [!NOTE]
+>
+> _Why would I need multiple tokens?_ In situations where you work across
+> multiple GitHub.com accounts (e.g. with Enterprise Managed Users), you may
+> need to provide additional tokens to access contributions across all accounts.
 
-_Example:_ `${{ secrets.GITHUB_TOKEN }}`
+The token permissions should include the following:
 
-### `emuTokens`
-
-**Required** (String) A comma-separated list of GitHub EMU tokens for
-authentication. This allows you to use different tokens for different EMU
-instances.
-
-_Example:_ `${{ secrets.EMU_TOKEN_1 }},${{ secrets.EMU_TOKEN_2 }}`
-
-### `numberOfDays`
-
-**Required** (Number) The number of days in the past to search. Default is `14`.
-
-_Example:_ `14`
-
-### `organization`
-
-**Required** (String) The organization to create the summary issue in
-(owner/name format).
-
-_Example:_ `ncalteen-github`
-
-### `repository`
-
-**Required** (String) The repository to create the summary issue in (owner/name
-format).
-
-_Example:_ `todo`
-
-### `projectNumber`
-
-**Required** (Number) The project to add the summary issue to.
-
-_Example:_ `1`
+- Read access to repositories, issues, and pull requests
+- Write access to issues
+- (Optional) Write access to projects
 
 ## Outputs
 
@@ -51,11 +32,12 @@ None
 
 ## Example usage
 
+> Make sure to update the version of the action!
+
 ```yaml
 name: Report on @ncalteen's activity
 
-# Run every 2 weeks
-# Or run manually
+# Run every 2 weeks, or manually
 on:
   schedule:
     - cron: '0 0 1,15 * *'
@@ -64,15 +46,17 @@ on:
 jobs:
   # Assign the issue to @ncalteen
   report:
+    name: Generate Report
     runs-on: ubuntu-latest
+
     steps:
-      - name: Build report for @ncalteen
-        uses: ncalteen/project-summary@v0.1
+      - name: Build Report for @ncalteen
+        id: report
+        uses: ncalteen/what-did-i-do@vX.Y.Z
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          emuTokens: '${{ secrets.TOKEN_1 }},${{ secrets.TOKEN_2 }}'
-          numberOfDays: '14'
-          organization: ncalteen-github
-          repository: todo
-          projectNumber: '1'
+          other_tokens: '${{ secrets.TOKEN_1 }},${{ secrets.TOKEN_2 }}'
+          num_days: 14
+          repository: ncalteen/todo
+          projectNumber: 1
 ```
