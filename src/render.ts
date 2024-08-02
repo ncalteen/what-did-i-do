@@ -1,5 +1,7 @@
 import * as fs from 'fs'
 import mustache from 'mustache'
+import { dirname } from 'node:path'
+import { fileURLToPath } from 'node:url'
 import * as path from 'path'
 import type {
   Contributions,
@@ -51,7 +53,10 @@ export function generateMarkdown(
 
   return mustache.render(
     fs.readFileSync(
-      path.resolve(__dirname, '../templates/issue.mustache'),
+      path.resolve(
+        dirname(fileURLToPath(import.meta.url)),
+        '../templates/issue.mustache'
+      ),
       'utf-8'
     ),
     context

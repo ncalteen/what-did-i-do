@@ -1,4 +1,4 @@
-import type { IssueContributionsByRepository, PullRequestContributionsByRepository, PullRequestReviewContributionsByRepository } from './types.js';
+import type { Contributions, IssueContributionsByRepository, PullRequestContributionsByRepository, PullRequestReviewContributionsByRepository } from './types.js';
 /**
  * Get the contributions for the user.
  *
@@ -6,7 +6,7 @@ import type { IssueContributionsByRepository, PullRequestContributionsByReposito
  * @param startDate ISO 8601 date.
  * @returns Object with the total contribution stats.
  */
-export declare function getContributions(tokens: string[], startDate: Date): Promise<any>;
+export declare function getContributions(tokens: string[], startDate: Date): Promise<Contributions>;
 /**
  * Gets the issue contributions grouped by repository.
  *

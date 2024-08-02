@@ -1,64 +1,58 @@
+#############################
+## JavaScript Linter rules ##
+#############################
+
 env:
   node: true
   es6: true
   jest: true
 
 globals:
-  __non_webpack_require__: readonly
   Atomics: readonly
-  NodeRequire: readonly
   SharedArrayBuffer: readonly
 
 ignorePatterns:
-  - .github
-  - .vscode
   - coverage
   - dist
+  - linter
   - node_modules
-  - reports
 
 parser: '@typescript-eslint/parser'
 
 parserOptions:
   ecmaVersion: 2023
-  project: tsconfig.eslint.json
+  project:
+    - tsconfig.eslint.json
+  sourceType: module
   tsconfigRootDir: .
-
-plugins:
-  - import
-  - jest
-  - '@typescript-eslint'
-
-extends:
-  - eslint:recommended
-  - plugin:@typescript-eslint/eslint-recommended
-  - plugin:@typescript-eslint/recommended-requiring-type-checking
-  - plugin:@typescript-eslint/recommended
-  - plugin:github/recommended
-  - plugin:import/typescript
-  - plugin:jest/recommended
-
-rules:
-  '@typescript-eslint/no-explicit-any': off
-  '@typescript-eslint/no-redundant-type-constituents': off
-  '@typescript-eslint/no-unsafe-argument': off
-  '@typescript-eslint/no-unsafe-assignment': off
-  '@typescript-eslint/no-unsafe-call': off
-  '@typescript-eslint/no-unsafe-enum-comparison': off
-  '@typescript-eslint/no-unsafe-member-access': off
-  '@typescript-eslint/no-unsafe-return': off
-  '@typescript-eslint/no-var-requires': warn
-  camelcase: off
-  eslint-comments/no-use: off
-  i18n-text/no-en: off
-  import/extensions: off
-  import/no-namespace: off
-  no-unused-vars: off
-  no-shadow: off
-  prettier/prettier: error
 
 settings:
   import/resolver:
     typescript:
       alwaysTryTypes: true
       project: tsconfig.eslint.json
+
+plugins:
+  - import
+  - jest
+  - prettier
+  - '@typescript-eslint'
+
+extends:
+  - eslint:recommended
+  - plugin:@typescript-eslint/eslint-recommended
+  - plugin:@typescript-eslint/recommended
+  - plugin:github/recommended
+  - plugin:jest/recommended
+  - plugin:prettier/recommended
+
+rules:
+  camelcase: off
+  eslint-comments/no-use: off
+  eslint-comments/no-unused-disable: off
+  i18n-text/no-en: off
+  import/no-namespace: off
+  no-console: off
+  no-shadow: off
+  no-unused-vars: off
+  prettier/prettier: error

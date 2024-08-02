@@ -5,5 +5,12 @@
     "noEmit": true
   },
   "exclude": ["dist", "node_modules"],
-  "include": ["__fixtures__", "__mocks__", "__tests__", "src", "jest.config.ts"]
+  "include": [
+    "__fixtures__",
+    "__mocks__",
+    "__tests__",
+    "src",
+    "jest.config.ts",
+    "rollup.config.ts"
+  ]
 }

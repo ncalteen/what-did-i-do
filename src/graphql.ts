@@ -9,6 +9,7 @@ import * as queries from './queries.js'
  * @param octokit The authenticated Octokit instance.
  * @returns The username of the authenticated user.
  */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function getAuthenticatedUser(octokit: any): Promise<string> {
   const response = await octokit.graphql(queries.AUTHENTICATED_USER)
   core.info(`[AUTHENTICATED_USER]: ${response.viewer.login}`)
@@ -24,6 +25,7 @@ export async function getAuthenticatedUser(octokit: any): Promise<string> {
  * @returns The GraphQL node ID of the user.
  */
 export async function getUserNodeId(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   octokit: any,
   username: string
 ): Promise<string> {
@@ -47,6 +49,7 @@ export async function getUserNodeId(
  * @returns The global ID of the project or undefined if it wasn't found.
  */
 export async function getProjectNodeId(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   octokit: any,
   owner: string,
   projectNumber: number | undefined
@@ -62,6 +65,7 @@ export async function getProjectNodeId(
     })
 
     return response.organization.projectV2.id
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } catch (error: any) {
     const errorWithType = error as GraphqlResponseError<Organization>
 
@@ -78,6 +82,7 @@ export async function getProjectNodeId(
     })
 
     return response.user.projectV2.id
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } catch (error: any) {
     const errorWithType = error as GraphqlResponseError<User>
 
@@ -99,6 +104,7 @@ export async function getProjectNodeId(
  * @returns The node ID of the repository.
  */
 export async function getRepositoryNodeId(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   octokit: any,
   owner: string,
   name: string

@@ -1,8 +1,18 @@
-import mustache from 'mustache'
-import * as render from 'src/render.js'
-import { Contributions } from 'src/types.js'
+import { jest } from '@jest/globals'
+import { Contributions } from '../src/types.js'
 
-const mustache_renderMock = jest.spyOn(mustache, 'render').mockImplementation()
+const mustache_render = jest.fn()
+
+jest.unstable_mockModule('mustache', () => {
+  return {
+    default: {
+      render: mustache_render
+    },
+    render: mustache_render
+  }
+})
+
+const render = await import('../src/render.js')
 
 const contributions: Contributions = {
   totalCommitContributions: 1,
@@ -93,7 +103,7 @@ describe('render', () => {
     it('Generates the Markdown summary for the user', () => {
       render.generateMarkdown(contributions, new Date(), new Date(), 'octocat')
 
-      expect(mustache_renderMock).toHaveBeenCalledWith(
+      expect(mustache_render).toHaveBeenCalledWith(
         expect.any(String),
         expect.any(Object)
       )

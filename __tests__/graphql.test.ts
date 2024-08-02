@@ -1,5 +1,21 @@
-import { mocktokit } from '__fixtures__/mocktokit.js'
-import * as graphql from 'src/graphql.js'
+import { jest } from '@jest/globals'
+import * as core from '../__fixtures__/core.js'
+import * as octokit from '../__fixtures__/octokit.js'
+
+jest.unstable_mockModule('@actions/core', () => core)
+jest.unstable_mockModule('@octokit/rest', async () => {
+  class Octokit {
+    constructor() {
+      return octokit
+    }
+  }
+
+  return {
+    Octokit
+  }
+})
+
+const graphql = await import('../src/graphql.js')
 
 describe('graphql', () => {
   afterEach(() => {
@@ -8,11 +24,11 @@ describe('graphql', () => {
 
   describe('getAuthenticatedUser', () => {
     it('Returns the authenticated user', async () => {
-      mocktokit.graphql.mockResolvedValueOnce({
+      octokit.graphql.mockResolvedValueOnce({
         viewer: { login: 'octocat' }
-      })
+      } as never)
 
-      await expect(graphql.getAuthenticatedUser(mocktokit)).resolves.toEqual(
+      await expect(graphql.getAuthenticatedUser(octokit)).resolves.toEqual(
         'octocat'
       )
     })
@@ -20,70 +36,70 @@ describe('graphql', () => {
 
   describe('getUserNodeId', () => {
     it('Returns the node ID for the user', async () => {
-      mocktokit.request.mockResolvedValueOnce({
+      octokit.request.mockResolvedValueOnce({
         data: { node_id: 'NODE_ID' }
-      })
+      } as never)
 
-      await expect(
-        graphql.getUserNodeId(mocktokit, 'octocat')
-      ).resolves.toEqual('NODE_ID')
+      await expect(graphql.getUserNodeId(octokit, 'octocat')).resolves.toEqual(
+        'NODE_ID'
+      )
     })
   })
 
   describe('getProjectNodeId', () => {
     it('Returns the organization project node ID', async () => {
-      mocktokit.graphql.mockResolvedValueOnce({
+      octokit.graphql.mockResolvedValueOnce({
         organization: { projectV2: { id: 'PROJECT_ID' } }
-      })
+      } as never)
 
       await expect(
-        graphql.getProjectNodeId(mocktokit, 'octoorg', 1)
+        graphql.getProjectNodeId(octokit, 'octoorg', 1)
       ).resolves.toEqual('PROJECT_ID')
     })
 
     it('Returns the user project node ID', async () => {
-      mocktokit.graphql
+      octokit.graphql
         .mockRejectedValueOnce({
           errors: [{ type: 'NOT_FOUND' }]
-        })
+        } as never)
         .mockResolvedValueOnce({
           user: { projectV2: { id: 'PROJECT_ID' } }
-        })
+        } as never)
 
       await expect(
-        graphql.getProjectNodeId(mocktokit, 'octocat', 1)
+        graphql.getProjectNodeId(octokit, 'octocat', 1)
       ).resolves.toEqual('PROJECT_ID')
     })
 
     it('Returns undefined if no project is found', async () => {
-      mocktokit.graphql
+      octokit.graphql
         .mockRejectedValueOnce({
           errors: [{ type: 'NOT_FOUND' }]
-        })
+        } as never)
         .mockRejectedValueOnce({
           errors: [{ type: 'NOT_FOUND' }]
-        })
+        } as never)
 
       await expect(
-        graphql.getProjectNodeId(mocktokit, 'octocat', 1)
+        graphql.getProjectNodeId(octokit, 'octocat', 1)
       ).resolves.toBeUndefined()
     })
 
     it('Returns undefined if no project number is provided', async () => {
       await expect(
-        graphql.getProjectNodeId(mocktokit, 'octocat', undefined)
+        graphql.getProjectNodeId(octokit, 'octocat', undefined)
       ).resolves.toBeUndefined()
     })
   })
 
   describe('getRepositoryNodeId', () => {
     it('Returns the node ID for the repository', async () => {
-      mocktokit.graphql.mockResolvedValueOnce({
+      octokit.graphql.mockResolvedValueOnce({
         repository: { id: 'NODE_ID' }
-      })
+      } as never)
 
       await expect(
-        graphql.getRepositoryNodeId(mocktokit, 'octocat', 'octorepo')
+        graphql.getRepositoryNodeId(octokit, 'octocat', 'octorepo')
       ).resolves.toEqual('NODE_ID')
     })
   })

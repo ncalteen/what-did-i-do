@@ -23,7 +23,7 @@ import type {
 export async function getContributions(
   tokens: string[],
   startDate: Date
-): Promise<any> {
+): Promise<Contributions> {
   const contributions: Contributions = {
     totalCommitContributions: 0,
     totalIssueContributions: 0,
@@ -141,6 +141,7 @@ export async function getContributions(
  * @returns The issue contributions grouped by repository.
  */
 export async function getIssueContributionsByRepository(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   octokit: any,
   username: string,
   startDate: Date
@@ -237,6 +238,7 @@ export async function getIssueContributionsByRepository(
  * @returns The pull request contributions grouped by repository.
  */
 export async function getPullRequestContributionsByRepository(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   octokit: any,
   username: string,
   startDate: Date
@@ -347,6 +349,7 @@ export async function getPullRequestContributionsByRepository(
  * @returns The pull request review contributions grouped by repository.
  */
 export async function getPullRequestReviewContributionsByRepository(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   octokit: any,
   username: string,
   startDate: Date
@@ -469,6 +472,7 @@ export async function getPullRequestReviewContributionsByRepository(
  */
 export async function createIssue(
   body: string,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   octokit: any,
   repository: string,
   username: string,

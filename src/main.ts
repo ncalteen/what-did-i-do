@@ -4,9 +4,6 @@ import * as graphql from './graphql.js'
 import * as render from './render.js'
 import * as utils from './utils.js'
 
-/**
- * Action Entrypoint
- */
 export async function run() {
   // Get the inputs
   const githubToken = core.getInput('token', { required: true })
