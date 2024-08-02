@@ -6,13 +6,22 @@ period.
 
 ## Inputs
 
-| Name             | Default                       | Description                                                         |
-| ---------------- | ----------------------------- | ------------------------------------------------------------------- |
-| `token`          | `${{ secrets.GITHUB_TOKEN }}` | GitHub.com authentication token                                     |
-| `other_tokens`   |                               | Comma-separated list of additional GitHub.com tokens                |
-| `num_days`       | `14`                          | Number of days to look back                                         |
-| `repository`     | `${{ github.repository }}`    | The repository to create the summary issue in (`owner/name` format) |
-| `project_number` |                               | (Optional) GitHub project number to add the issue to.               |
+- `token`
+  - Default: `${{ secrets.GITHUB_TOKEN }}`
+  - Description: GitHub.com authentication token
+- `other_tokens`
+  - Default: ``
+  - Description: Comma-separated list of additional GitHub.com tokens
+- `num_days`
+  - Default: `14`
+  - Description: Number of days to look back
+- `repository`
+  - Default: `${{ github.repository }}`
+  - Description: The repository to create the summary issue in (`owner/name`
+    format)
+- `project_number`
+  - Default: ``
+  - Description: (Optional) GitHub project number to add the issue to.
 
 > [!NOTE]
 >
