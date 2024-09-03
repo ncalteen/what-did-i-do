@@ -31441,6 +31441,7 @@ octokit, username, startDate) {
             contributions: element.contributions.nodes
                 .filter((node) => {
                 // Filter out PRs created by Dependabot
+                // eslint-disable-next-line @typescript-eslint/no-unused-expressions
                 !node.pullRequest.author?.login.includes('dependabot');
             })
                 .map((node) => {
