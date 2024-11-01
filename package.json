@@ -48,7 +48,7 @@
     "jsonc": "^2.0.0",
     "mustache": "^4.2.0",
     "ts-dedent": "^2.2.0",
-    "yaml": "^2.5.1"
+    "yaml": "^2.6.0"
   },
   "devDependencies": {
     "@octokit/graphql": "^8.1.1",
