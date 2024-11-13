@@ -73,5 +73,5 @@ jobs:
           other_tokens: '${{ secrets.TOKEN_1 }},${{ secrets.TOKEN_2 }}'
           num_days: 14
           repository: ncalteen/todo
-          projectNumber: 1
+          project_number: 1
 ```
