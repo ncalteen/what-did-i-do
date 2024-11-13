@@ -38,6 +38,7 @@ contributions.
 The token permissions should include the following:
 
 - Read access to repositories, issues, and pull requests
+- Read access to your user profile (`read:user`)
 - Write access to issues
 - (Optional) Write access to projects
 
