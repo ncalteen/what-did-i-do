@@ -42,6 +42,15 @@ export type GraphQLIssueContributionsByRepository = {
                                 }[];
                             };
                             body: string;
+                            comments: {
+                                nodes: {
+                                    author: {
+                                        login: string;
+                                    };
+                                    body: string;
+                                    createdAt: string;
+                                }[];
+                            };
                             createdAt: string;
                             number: number;
                             state: string;
@@ -80,6 +89,15 @@ export type GraphQLPullRequestContributionsByRepository = {
                             body: string;
                             changedFiles: number;
                             closed: boolean;
+                            comments: {
+                                nodes: {
+                                    author: {
+                                        login: string;
+                                    };
+                                    body: string;
+                                    createdAt: string;
+                                }[];
+                            };
                             createdAt: string;
                             editor?: {
                                 login: string;
@@ -191,6 +209,15 @@ export type IssueContributionsByRepository = {
     [key: string]: {
         contributions: {
             body: string;
+            comments: {
+                nodes: {
+                    author: {
+                        login: string;
+                    };
+                    body: string;
+                    createdAt: string;
+                }[];
+            };
             createdAt: Date;
             number: number;
             state: string;
@@ -210,6 +237,15 @@ export type PullRequestContributionsByRepository = {
             body: string;
             changedFiles: number;
             closed: boolean;
+            comments: {
+                nodes: {
+                    author: {
+                        login: string;
+                    };
+                    body: string;
+                    createdAt: string;
+                }[];
+            };
             createdAt: Date;
             isDraft: boolean;
             merged: boolean;

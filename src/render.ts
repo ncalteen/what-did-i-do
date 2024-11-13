@@ -12,6 +12,25 @@ import type {
 } from './types.js'
 
 /**
+ * Generates the OpenAI prompt for the user.
+ *
+ * @param handle The GitHub handle of the user.
+ * @returns The OpenAI prompt.
+ */
+export function generatePrompt(handle: string): string {
+  return mustache.render(
+    fs.readFileSync(
+      path.resolve(
+        dirname(fileURLToPath(import.meta.url)),
+        '../templates/prompt.mustache'
+      ),
+      'utf-8'
+    ),
+    { handle }
+  )
+}
+
+/**
  * Generates the Markdown summary of contributions for a user.
  *
  * @param contributions The contribution map for the user.
@@ -25,7 +44,7 @@ export function generateMarkdown(
   endDate: Date,
   startDate: Date,
   username: string
-) {
+): string {
   // Build the context to pass to the mustache template
   const context = {
     endDate: endDate.toISOString().substring(0, 10),

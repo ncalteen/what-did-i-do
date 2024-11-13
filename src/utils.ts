@@ -163,6 +163,7 @@ export async function getIssueContributionsByRepository(
         .map((node) => {
           return {
             body: node.issue.body,
+            comments: node.issue.comments,
             createdAt: new Date(node.issue.createdAt),
             number: node.issue.number,
             state: node.issue.state,
@@ -211,6 +212,7 @@ export async function getIssueContributionsByRepository(
         element.contributions.nodes.map((node) => {
           return {
             body: node.issue.body,
+            comments: node.issue.comments,
             createdAt: new Date(node.issue.createdAt),
             number: node.issue.number,
             state: node.issue.state,
@@ -262,6 +264,7 @@ export async function getPullRequestContributionsByRepository(
           body: node.pullRequest.body,
           changedFiles: node.pullRequest.changedFiles,
           closed: node.pullRequest.closed,
+          comments: node.pullRequest.comments,
           createdAt: new Date(node.pullRequest.createdAt),
           isDraft: node.pullRequest.isDraft,
           merged: node.pullRequest.merged,
@@ -315,6 +318,7 @@ export async function getPullRequestContributionsByRepository(
             body: node.pullRequest.body,
             changedFiles: node.pullRequest.changedFiles,
             closed: node.pullRequest.closed,
+            comments: node.pullRequest.comments,
             createdAt: new Date(node.pullRequest.createdAt),
             isDraft: node.pullRequest.isDraft,
             merged: node.pullRequest.merged,
@@ -470,6 +474,7 @@ export async function getPullRequestReviewContributionsByRepository(
  * @param repository The repository name (owner/name format).
  * @param username The GitHub username to assign the issue to.
  * @param projectNumber (Optional) The project to add the issue to.
+ * @returns The issue number.
  */
 export async function createIssue(
   body: string,
@@ -478,7 +483,7 @@ export async function createIssue(
   repository: string,
   username: string,
   projectNumber?: number
-) {
+): Promise<number> {
   const title = `GitHub Contributions (${new Date().toISOString().substring(0, 10)})`
   const [owner, name] = repository.split('/')
   core.info(`Creating issue in ${owner}/${name}`)
@@ -504,4 +509,6 @@ export async function createIssue(
       projectId,
       issueId: response.createIssue.issue.id
     })
+
+  return response.createIssue.issue.number
 }

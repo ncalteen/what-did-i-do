@@ -19,6 +19,25 @@ inputs:
     description: The number of days to look back. Defaults to 14.
     required: true
     default: '14'
+  openai_model:
+    description:
+      (Optional) OpenAI API model for generating the summary. This will be added
+      as a comment to the issue that is created.
+    required: false
+    default: gpt-4o-mini
+  openai_project:
+    description:
+      (Optional) OpenAI API project for generating the summary. This will be
+      added as a comment to the issue that is created.
+    required: false
+  openai_token:
+    description:
+      (Optional) OpenAI API token for generating the summary. This will be added
+      as a comment to the issue that is created.
+    required: false
+  project_number:
+    description: (Optional) The project number to create the summary issue in.
+    required: false
   repository:
     description:
       'The owner and repository to create the summary issue in. Defaults to the
@@ -27,9 +46,6 @@ inputs:
       running this action, ensure the `token` input has sufficient permissions.'
     required: true
     default: ${{ github.repository }}
-  project_number:
-    description: (Optional) The project number to create the summary issue in.
-    required: false
 
 runs:
   using: node20

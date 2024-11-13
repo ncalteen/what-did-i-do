@@ -29,6 +29,9 @@ const contributions: Contributions = {
       contributions: [
         {
           body: 'Hello, world!',
+          comments: {
+            nodes: []
+          },
           createdAt: new Date(),
           number: 1,
           state: 'OPEN',
@@ -49,6 +52,9 @@ const contributions: Contributions = {
           body: 'Hello, world!',
           changedFiles: 1,
           closed: false,
+          comments: {
+            nodes: []
+          },
           createdAt: new Date(),
           isDraft: false,
           merged: false,

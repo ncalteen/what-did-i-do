@@ -43,6 +43,15 @@ export const ISSUE_CONTRIBUTIONS_BY_REPOSITORY = `
                   }
                 }
                 body
+                comments(first: 50, orderBy: {field: UPDATED_AT, direction: ASC}) {
+                  nodes {
+                    author {
+                      login
+                    }
+                    body
+                    createdAt
+                  }
+                }
                 createdAt
                 number
                 state
@@ -84,6 +93,15 @@ export const PULL_REQUEST_CONTRIBUTIONS_BY_REPOSITORY = `
                 body
                 changedFiles
                 closed
+                comments(first: 50, orderBy: {field: UPDATED_AT, direction: ASC}) {
+                  nodes {
+                    author {
+                      login
+                    }
+                    body
+                    createdAt
+                  }
+                }
                 createdAt
                 editor {
                   login
@@ -249,6 +267,7 @@ export const CREATE_ISSUE = `
     }) {
       issue {
         id
+        number
       }
     }
   }

@@ -1,3 +1,4 @@
+import type { Octokit } from '@octokit/rest';
 /**
  * Get the currently authenticated user.
  *
@@ -12,7 +13,7 @@ export declare function getAuthenticatedUser(octokit: any): Promise<string>;
  * @param username The user to get the node ID for.
  * @returns The GraphQL node ID of the user.
  */
-export declare function getUserNodeId(octokit: any, username: string): Promise<string>;
+export declare function getUserNodeId(octokit: Octokit, username: string): Promise<string>;
 /**
  * Get the GraphQL node ID of a project.
  *
@@ -23,7 +24,7 @@ export declare function getUserNodeId(octokit: any, username: string): Promise<s
  * @param projectNumber The number of the project.
  * @returns The global ID of the project or undefined if it wasn't found.
  */
-export declare function getProjectNodeId(octokit: any, owner: string, projectNumber: number | undefined): Promise<string | undefined>;
+export declare function getProjectNodeId(octokit: Octokit, owner: string, projectNumber: number | undefined): Promise<string | undefined>;
 /**
  * Get the GraphQL node ID of a repository.
  *
@@ -32,4 +33,4 @@ export declare function getProjectNodeId(octokit: any, owner: string, projectNum
  * @param name The name of the repository.
  * @returns The node ID of the repository.
  */
-export declare function getRepositoryNodeId(octokit: any, owner: string, name: string): Promise<string>;
+export declare function getRepositoryNodeId(octokit: Octokit, owner: string, name: string): Promise<string>;

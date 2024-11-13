@@ -1,6 +1,7 @@
 import * as core from '@actions/core'
 import type { GraphqlResponseError } from '@octokit/graphql'
 import { Organization, User } from '@octokit/graphql-schema'
+import type { Octokit } from '@octokit/rest'
 import * as queries from './queries.js'
 
 /**
@@ -11,10 +12,7 @@ import * as queries from './queries.js'
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function getAuthenticatedUser(octokit: any): Promise<string> {
-  const response = await octokit.graphql(queries.AUTHENTICATED_USER)
-  core.info(`[AUTHENTICATED_USER]: ${response.viewer.login}`)
-
-  return response.viewer.login
+  return (await octokit.graphql(queries.AUTHENTICATED_USER)).viewer.login
 }
 
 /**
@@ -25,17 +23,14 @@ export async function getAuthenticatedUser(octokit: any): Promise<string> {
  * @returns The GraphQL node ID of the user.
  */
 export async function getUserNodeId(
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  octokit: any,
+  octokit: Octokit,
   username: string
 ): Promise<string> {
-  core.info(`[USER_NODE_ID]: ${username}`)
-  const response = await octokit.request('GET /users/:username', {
-    username
-  })
-  core.info(`[USER_NODE_ID]: ${response.data.node_id}`)
-
-  return response.data.node_id
+  return (
+    await octokit.request('GET /users/:username', {
+      username
+    })
+  ).data.node_id
 }
 
 /**
@@ -49,20 +44,18 @@ export async function getUserNodeId(
  * @returns The global ID of the project or undefined if it wasn't found.
  */
 export async function getProjectNodeId(
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  octokit: any,
+  octokit: Octokit,
   owner: string,
   projectNumber: number | undefined
 ): Promise<string | undefined> {
-  core.info(`[PROJECT_NODE_ID]: ${owner} ${projectNumber}`)
   if (projectNumber === undefined) return undefined
 
   try {
     // Try to get the project from the organization
-    const response = await octokit.graphql(queries.ORG_PROJECT_NODE_ID, {
+    const response = (await octokit.graphql(queries.ORG_PROJECT_NODE_ID, {
       organization: owner,
       projectNumber
-    })
+    })) as { organization: { projectV2: { id: string } } }
 
     return response.organization.projectV2.id
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -76,10 +69,10 @@ export async function getProjectNodeId(
 
   try {
     // Try to get the project from the user
-    const response = await octokit.graphql(queries.USER_PROJECT_NODE_ID, {
+    const response = (await octokit.graphql(queries.USER_PROJECT_NODE_ID, {
       login: owner,
       projectNumber
-    })
+    })) as { user: { projectV2: { id: string } } }
 
     return response.user.projectV2.id
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -104,16 +97,14 @@ export async function getProjectNodeId(
  * @returns The node ID of the repository.
  */
 export async function getRepositoryNodeId(
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  octokit: any,
+  octokit: Octokit,
   owner: string,
   name: string
 ): Promise<string> {
-  core.info(`[REPOSITORY_NODE_ID]: ${owner}/${name}`)
-  const response = await octokit.graphql(queries.REPOSITORY_NODE_ID, {
+  const response = (await octokit.graphql(queries.REPOSITORY_NODE_ID, {
     owner,
     name
-  })
+  })) as { repository: { id: string } }
 
   return response.repository.id
 }

@@ -2,7 +2,8 @@
 
 This action helps track a user's work in GitHub. It's designed to generate an
 issue that contains a summary of contributions on GitHub.com over a certain time
-period.
+period. It can optionally leverage OpenAI to generate a summary of the
+contributions.
 
 ## Inputs
 
@@ -10,18 +11,23 @@ period.
   - Default: `${{ secrets.GITHUB_TOKEN }}`
   - Description: GitHub.com authentication token
 - `other_tokens`
-  - Default: ``
   - Description: Comma-separated list of additional GitHub.com tokens
 - `num_days`
   - Default: `14`
   - Description: Number of days to look back
+- `openai_model`
+  - Default: `gpt-4o-mini`
+  - Description: OpenAI model to use for generating the summary
+- `openai_project`
+  - Description: OpenAI project to use for generating the summary
+- `openai_token`
+  - Description: OpenAI authentication token for generating the summary
+- `project_number`
+  - Description: (Optional) GitHub project number to add the issue to.
 - `repository`
   - Default: `${{ github.repository }}`
   - Description: The repository to create the summary issue in (`owner/name`
     format)
-- `project_number`
-  - Default: ``
-  - Description: (Optional) GitHub project number to add the issue to.
 
 > [!NOTE]
 >

@@ -1,5 +1,12 @@
 import type { Contributions, IssueSummary, PullRequestReviewSummary, PullRequestSummary, RepositorySummary } from './types.js';
 /**
+ * Generates the OpenAI prompt for the user.
+ *
+ * @param handle The GitHub handle of the user.
+ * @returns The OpenAI prompt.
+ */
+export declare function generatePrompt(handle: string): string;
+/**
  * Generates the Markdown summary of contributions for a user.
  *
  * @param contributions The contribution map for the user.

@@ -44,5 +44,6 @@ export declare function getPullRequestReviewContributionsByRepository(octokit: a
  * @param repository The repository name (owner/name format).
  * @param username The GitHub username to assign the issue to.
  * @param projectNumber (Optional) The project to add the issue to.
+ * @returns The issue number.
  */
-export declare function createIssue(body: string, octokit: any, repository: string, username: string, projectNumber?: number): Promise<void>;
+export declare function createIssue(body: string, octokit: any, repository: string, username: string, projectNumber?: number): Promise<number>;

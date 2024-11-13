@@ -1,5 +1,6 @@
 import * as core from '@actions/core'
 import * as github from '@actions/github'
+import { OpenAI } from 'openai'
 import * as graphql from './graphql.js'
 import * as render from './render.js'
 import * as utils from './utils.js'
@@ -19,6 +20,9 @@ export async function run() {
     core.getInput('project_number') === ''
       ? undefined
       : parseInt(core.getInput('project_number'))
+  const openAIModel = core.getInput('openai_model')
+  const openAIProject = core.getInput('openai_project')
+  const openAIToken = core.getInput('openai_token')
 
   core.info('Action Inputs:')
   core.info(`  Number of Days: ${numberOfDays}`)
@@ -54,11 +58,36 @@ export async function run() {
   )
 
   // Write the output to a new issue and assign to the project
-  await utils.createIssue(
+  const issueNumber = await utils.createIssue(
     body,
     octokit,
     `${owner}/${repository}`,
     username,
     projectNumber
   )
+
+  // Call the OpenAI API to generate a summary
+  if (openAIToken !== '' && openAIProject !== '' && openAIModel !== '') {
+    const openai = new OpenAI({
+      project: openAIProject,
+      apiKey: openAIToken
+    })
+
+    const completions = await openai.chat.completions.create({
+      model: openAIModel,
+      messages: [
+        { role: 'user', content: render.generatePrompt(username) },
+        { role: 'user', content: JSON.stringify(contributions) }
+      ]
+    })
+
+    // Comment on the issue with the summary
+    if (completions.choices[0].message.content)
+      await octokit.rest.issues.createComment({
+        owner,
+        repo: repository,
+        issue_number: issueNumber,
+        body: completions.choices[0].message.content
+      })
+  }
 }

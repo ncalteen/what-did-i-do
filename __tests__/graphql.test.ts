@@ -1,4 +1,5 @@
 import { jest } from '@jest/globals'
+import type { Octokit } from '@octokit/rest'
 import * as core from '../__fixtures__/core.js'
 import * as octokit from '../__fixtures__/octokit.js'
 
@@ -40,9 +41,9 @@ describe('graphql', () => {
         data: { node_id: 'NODE_ID' }
       } as never)
 
-      await expect(graphql.getUserNodeId(octokit, 'octocat')).resolves.toEqual(
-        'NODE_ID'
-      )
+      await expect(
+        graphql.getUserNodeId(octokit as unknown as Octokit, 'octocat')
+      ).resolves.toEqual('NODE_ID')
     })
   })
 
@@ -53,7 +54,7 @@ describe('graphql', () => {
       } as never)
 
       await expect(
-        graphql.getProjectNodeId(octokit, 'octoorg', 1)
+        graphql.getProjectNodeId(octokit as unknown as Octokit, 'octoorg', 1)
       ).resolves.toEqual('PROJECT_ID')
     })
 
@@ -67,7 +68,7 @@ describe('graphql', () => {
         } as never)
 
       await expect(
-        graphql.getProjectNodeId(octokit, 'octocat', 1)
+        graphql.getProjectNodeId(octokit as unknown as Octokit, 'octocat', 1)
       ).resolves.toEqual('PROJECT_ID')
     })
 
@@ -81,13 +82,17 @@ describe('graphql', () => {
         } as never)
 
       await expect(
-        graphql.getProjectNodeId(octokit, 'octocat', 1)
+        graphql.getProjectNodeId(octokit as unknown as Octokit, 'octocat', 1)
       ).resolves.toBeUndefined()
     })
 
     it('Returns undefined if no project number is provided', async () => {
       await expect(
-        graphql.getProjectNodeId(octokit, 'octocat', undefined)
+        graphql.getProjectNodeId(
+          octokit as unknown as Octokit,
+          'octocat',
+          undefined
+        )
       ).resolves.toBeUndefined()
     })
   })
@@ -99,7 +104,11 @@ describe('graphql', () => {
       } as never)
 
       await expect(
-        graphql.getRepositoryNodeId(octokit, 'octocat', 'octorepo')
+        graphql.getRepositoryNodeId(
+          octokit as unknown as Octokit,
+          'octocat',
+          'octorepo'
+        )
       ).resolves.toEqual('NODE_ID')
     })
   })
