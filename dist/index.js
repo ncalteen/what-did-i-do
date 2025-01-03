@@ -318,11 +318,11 @@ function requireProxy () {
 	    })();
 	    if (proxyVar) {
 	        try {
-	            return new URL(proxyVar);
+	            return new DecodedURL(proxyVar);
 	        }
 	        catch (_a) {
 	            if (!proxyVar.startsWith('http://') && !proxyVar.startsWith('https://'))
-	                return new URL(`http://${proxyVar}`);
+	                return new DecodedURL(`http://${proxyVar}`);
 	        }
 	    }
 	    else {
@@ -380,6 +380,19 @@ function requireProxy () {
 	        hostLower.startsWith('127.') ||
 	        hostLower.startsWith('[::1]') ||
 	        hostLower.startsWith('[0:0:0:0:0:0:0:1]'));
+	}
+	class DecodedURL extends URL {
+	    constructor(url, base) {
+	        super(url, base);
+	        this._decodedUsername = decodeURIComponent(super.username);
+	        this._decodedPassword = decodeURIComponent(super.password);
+	    }
+	    get username() {
+	        return this._decodedUsername;
+	    }
+	    get password() {
+	        return this._decodedPassword;
+	    }
 	}
 	
 	return proxy;
@@ -24926,7 +24939,7 @@ function requireLib () {
 	        }
 	        const usingSsl = parsedUrl.protocol === 'https:';
 	        proxyAgent = new undici_1.ProxyAgent(Object.assign({ uri: proxyUrl.href, pipelining: !this._keepAlive ? 0 : 1 }, ((proxyUrl.username || proxyUrl.password) && {
-	            token: `${proxyUrl.username}:${proxyUrl.password}`
+	            token: `Basic ${Buffer.from(`${proxyUrl.username}:${proxyUrl.password}`).toString('base64')}`
 	        })));
 	        this._proxyAgentDispatcher = proxyAgent;
 	        if (usingSsl && this._ignoreSslError) {
@@ -31581,7 +31594,7 @@ function stringify(object, opts = {}) {
     return joined.length > 0 ? prefix + joined : '';
 }
 
-const VERSION = '4.72.0'; // x-release-please-version
+const VERSION = '4.77.0'; // x-release-please-version
 
 let auto = false;
 let kind = undefined;
@@ -31708,8 +31721,8 @@ class APIError extends OpenAIError {
         this.status = status;
         this.headers = headers;
         this.request_id = headers?.['x-request-id'];
+        this.error = error;
         const data = error;
-        this.error = data;
         this.code = data?.['code'];
         this.param = data?.['param'];
         this.type = data?.['type'];
@@ -31733,7 +31746,7 @@ class APIError extends OpenAIError {
         return '(no status code or body)';
     }
     static generate(status, errorResponse, message, headers) {
-        if (!status) {
+        if (!status || !headers) {
             return new APIConnectionError({ message, cause: castToError(errorResponse) });
         }
         const error = errorResponse?.['error'];
@@ -31767,13 +31780,11 @@ class APIError extends OpenAIError {
 class APIUserAbortError extends APIError {
     constructor({ message } = {}) {
         super(undefined, undefined, message || 'Request was aborted.', undefined);
-        this.status = undefined;
     }
 }
 class APIConnectionError extends APIError {
     constructor({ message, cause }) {
         super(undefined, undefined, message || 'Connection error.', undefined);
-        this.status = undefined;
         // in some environments the 'cause' property is already declared
         // @ts-ignore
         if (cause)
@@ -31786,46 +31797,18 @@ class APIConnectionTimeoutError extends APIConnectionError {
     }
 }
 class BadRequestError extends APIError {
-    constructor() {
-        super(...arguments);
-        this.status = 400;
-    }
 }
 class AuthenticationError extends APIError {
-    constructor() {
-        super(...arguments);
-        this.status = 401;
-    }
 }
 class PermissionDeniedError extends APIError {
-    constructor() {
-        super(...arguments);
-        this.status = 403;
-    }
 }
 class NotFoundError extends APIError {
-    constructor() {
-        super(...arguments);
-        this.status = 404;
-    }
 }
 class ConflictError extends APIError {
-    constructor() {
-        super(...arguments);
-        this.status = 409;
-    }
 }
 class UnprocessableEntityError extends APIError {
-    constructor() {
-        super(...arguments);
-        this.status = 422;
-    }
 }
 class RateLimitError extends APIError {
-    constructor() {
-        super(...arguments);
-        this.status = 429;
-    }
 }
 class InternalServerError extends APIError {
 }
@@ -32510,12 +32493,12 @@ class APIPromise extends Promise {
 }
 class APIClient {
     constructor({ baseURL, maxRetries = 2, timeout = 600000, // 10 minutes
-    httpAgent, fetch: overridenFetch, }) {
+    httpAgent, fetch: overriddenFetch, }) {
         this.baseURL = baseURL;
         this.maxRetries = validatePositiveInteger('maxRetries', maxRetries);
         this.timeout = validatePositiveInteger('timeout', timeout);
         this.httpAgent = httpAgent;
-        this.fetch = overridenFetch ?? fetch$1;
+        this.fetch = overriddenFetch ?? fetch$1;
     }
     authHeaders(opts) {
         return {};
@@ -32752,15 +32735,11 @@ class APIClient {
         if (signal)
             signal.addEventListener('abort', () => controller.abort());
         const timeout = setTimeout(() => controller.abort(), ms);
-        return (this.getRequestClient()
-            // use undefined this binding; fetch errors if bound to something else in browser/cloudflare
-            .fetch.call(undefined, url, { signal: controller.signal, ...options })
-            .finally(() => {
+        return (
+        // use undefined this binding; fetch errors if bound to something else in browser/cloudflare
+        this.fetch.call(undefined, url, { signal: controller.signal, ...options }).finally(() => {
             clearTimeout(timeout);
         }));
-    }
-    getRequestClient() {
-        return { fetch: this.fetch };
     }
     shouldRetry(response) {
         // Note this is not a standard header.
@@ -33077,8 +33056,8 @@ const safeJSON = (text) => {
         return undefined;
     }
 };
-// https://stackoverflow.com/a/19709846
-const startsWithSchemeRegexp = new RegExp('^(?:[a-z]+:)?//', 'i');
+// https://url.spec.whatwg.org/#url-scheme-string
+const startsWithSchemeRegexp = /^[a-z][a-z0-9+.-]*:/i;
 const isAbsoluteURL = (url) => {
     return startsWithSchemeRegexp.test(url);
 };
@@ -36126,7 +36105,7 @@ class Files extends APIResource {
      * [completions](https://platform.openai.com/docs/api-reference/fine-tuning/completions-input)
      * models.
      *
-     * The Batch API only supports `.jsonl` files up to 100 MB in size. The input also
+     * The Batch API only supports `.jsonl` files up to 200 MB in size. The input also
      * has a specific required
      * [format](https://platform.openai.com/docs/api-reference/batch/request-input).
      *
