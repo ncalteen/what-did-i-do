@@ -46,6 +46,13 @@ inputs:
       running this action, ensure the `token` input has sufficient permissions.'
     required: true
     default: ${{ github.repository }}
+  include_comments:
+    description:
+      Set this to true to include comment bodies in the prompt sent to OpenAI
+      (this can result in the context length being exceeded!). Defaults to
+      false.
+    required: false
+    default: 'false'
 
 runs:
   using: node20

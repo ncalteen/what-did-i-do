@@ -168,11 +168,7 @@ export async function getIssueContributionsByRepository(
             number: node.issue.number,
             state: node.issue.state,
             title: node.issue.title,
-            url: node.issue.url,
-            viewerDidAuthor: node.issue.viewerDidAuthor,
-            viewerIsAssigned: node.issue.assignees.nodes
-              .map((assignee) => assignee.login)
-              .includes(username)
+            url: node.issue.url
           }
         })
         .filter((node) => {
@@ -217,11 +213,7 @@ export async function getIssueContributionsByRepository(
             number: node.issue.number,
             state: node.issue.state,
             title: node.issue.title,
-            url: node.issue.url,
-            viewerDidAuthor: node.issue.viewerDidAuthor,
-            viewerIsAssigned: node.issue.assignees.nodes
-              .map((assignee) => assignee.login)
-              .includes(username)
+            url: node.issue.url
           }
         })
       )
@@ -262,7 +254,6 @@ export async function getPullRequestContributionsByRepository(
       contributions: element.contributions.nodes.map((node) => {
         return {
           body: node.pullRequest.body,
-          changedFiles: node.pullRequest.changedFiles,
           closed: node.pullRequest.closed,
           comments: node.pullRequest.comments,
           createdAt: new Date(node.pullRequest.createdAt),
@@ -272,15 +263,7 @@ export async function getPullRequestContributionsByRepository(
           reviewDecision: node.pullRequest.reviewDecision,
           state: node.pullRequest.state,
           title: node.pullRequest.title,
-          url: node.pullRequest.url,
-          viewerDidAuthor: node.pullRequest.viewerDidAuthor,
-          viewerDidEdit: node.pullRequest.editor?.login === username,
-          viewerLatestReviewState: node.pullRequest.viewerLatestReview?.state,
-          viewerIsAssigned: node.pullRequest.assignees.nodes
-            .map((assignee) => assignee.login)
-            .includes(username),
-          viewerReviewRequested:
-            node.pullRequest.viewerLatestReviewRequest?.id !== undefined
+          url: node.pullRequest.url
         }
       }),
       totalCount: element.contributions.totalCount,
@@ -326,15 +309,7 @@ export async function getPullRequestContributionsByRepository(
             reviewDecision: node.pullRequest.reviewDecision,
             state: node.pullRequest.state,
             title: node.pullRequest.title,
-            url: node.pullRequest.url,
-            viewerDidAuthor: node.pullRequest.viewerDidAuthor,
-            viewerDidEdit: node.pullRequest.editor?.login === username,
-            viewerLatestReviewState: node.pullRequest.viewerLatestReview?.state,
-            viewerIsAssigned: node.pullRequest.assignees.nodes
-              .map((assignee) => assignee.login)
-              .includes(username),
-            viewerReviewRequested:
-              node.pullRequest.viewerLatestReviewRequest?.id !== undefined
+            url: node.pullRequest.url
           }
         })
       )
@@ -393,10 +368,7 @@ export async function getPullRequestReviewContributionsByRepository(
               number: node.pullRequest.number,
               state: node.pullRequest.state,
               title: node.pullRequest.title,
-              url: node.pullRequest.url,
-              viewerDidAuthor: node.pullRequest.viewerDidAuthor,
-              viewerLatestReviewState:
-                node.pullRequest.viewerLatestReview?.state
+              url: node.pullRequest.url
             },
             pullRequestReview: {
               body: node.pullRequestReview.body,
@@ -445,10 +417,7 @@ export async function getPullRequestReviewContributionsByRepository(
               number: node.pullRequest.number,
               state: node.pullRequest.state,
               title: node.pullRequest.title,
-              url: node.pullRequest.url,
-              viewerDidAuthor: node.pullRequest.viewerDidAuthor,
-              viewerLatestReviewState:
-                node.pullRequest.viewerLatestReview?.state
+              url: node.pullRequest.url
             },
             pullRequestReview: {
               body: node.pullRequestReview.body,
