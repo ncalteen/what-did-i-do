@@ -193,7 +193,6 @@ export function generatePullRequestSummary(
   )) {
     for (const element of value.contributions) {
       pullRequests.push({
-        changedFiles: element.changedFiles,
         createdAt: element.createdAt.toISOString().substring(0, 10),
         number: element.number,
         repository: key,

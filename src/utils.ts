@@ -18,11 +18,13 @@ import type {
  *
  * @param tokens A list of GitHub tokens.
  * @param startDate ISO 8601 date.
+ * @param includeComments Whether to include comments in the contributions.
  * @returns Object with the total contribution stats.
  */
 export async function getContributions(
   tokens: string[],
-  startDate: Date
+  startDate: Date,
+  includeComments: boolean
 ): Promise<Contributions> {
   const contributions: Contributions = {
     totalCommitContributions: 0,
@@ -79,7 +81,12 @@ export async function getContributions(
 
     // Get the issue contributions grouped by repository
     const clientIssueContributionsByRepository: IssueContributionsByRepository =
-      await getIssueContributionsByRepository(octokit, username, startDate)
+      await getIssueContributionsByRepository(
+        octokit,
+        username,
+        startDate,
+        includeComments
+      )
     core.info(JSON.stringify(clientIssueContributionsByRepository, null, 2))
 
     // Get the pull request contributions grouped by repository
@@ -87,7 +94,8 @@ export async function getContributions(
       await getPullRequestContributionsByRepository(
         octokit,
         username,
-        startDate
+        startDate,
+        includeComments
       )
     core.info(
       JSON.stringify(clientPullRequestContributionsByRepository, null, 2)
@@ -114,7 +122,8 @@ export async function getContributions(
       ...(await getPullRequestContributionsByRepository(
         octokit,
         username,
-        startDate
+        startDate,
+        includeComments
       ))
     }
     contributions.pullRequestReviewContributionsByRepository = {
@@ -144,7 +153,8 @@ export async function getIssueContributionsByRepository(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   octokit: any,
   username: string,
-  startDate: Date
+  startDate: Date,
+  includeComments: boolean
 ): Promise<IssueContributionsByRepository> {
   const issueContributionsByRepository: IssueContributionsByRepository = {}
 
@@ -163,16 +173,12 @@ export async function getIssueContributionsByRepository(
         .map((node) => {
           return {
             body: node.issue.body,
-            comments: node.issue.comments,
+            comments: includeComments ? node.issue.comments : { nodes: [] },
             createdAt: new Date(node.issue.createdAt),
             number: node.issue.number,
             state: node.issue.state,
             title: node.issue.title,
-            url: node.issue.url,
-            viewerDidAuthor: node.issue.viewerDidAuthor,
-            viewerIsAssigned: node.issue.assignees.nodes
-              .map((assignee) => assignee.login)
-              .includes(username)
+            url: node.issue.url
           }
         })
         .filter((node) => {
@@ -212,16 +218,12 @@ export async function getIssueContributionsByRepository(
         element.contributions.nodes.map((node) => {
           return {
             body: node.issue.body,
-            comments: node.issue.comments,
+            comments: includeComments ? node.issue.comments : { nodes: [] },
             createdAt: new Date(node.issue.createdAt),
             number: node.issue.number,
             state: node.issue.state,
             title: node.issue.title,
-            url: node.issue.url,
-            viewerDidAuthor: node.issue.viewerDidAuthor,
-            viewerIsAssigned: node.issue.assignees.nodes
-              .map((assignee) => assignee.login)
-              .includes(username)
+            url: node.issue.url
           }
         })
       )
@@ -237,13 +239,15 @@ export async function getIssueContributionsByRepository(
  * @param octokit The authenticated Octokit instance.
  * @param username The GitHub username.
  * @param startDate The start date for the contributions.
+ * @param includeComments Whether to include comments in the contributions.
  * @returns The pull request contributions grouped by repository.
  */
 export async function getPullRequestContributionsByRepository(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   octokit: any,
   username: string,
-  startDate: Date
+  startDate: Date,
+  includeComments: boolean
 ): Promise<PullRequestContributionsByRepository> {
   const pullRequestContributionsByRepository: PullRequestContributionsByRepository =
     {}
@@ -262,9 +266,8 @@ export async function getPullRequestContributionsByRepository(
       contributions: element.contributions.nodes.map((node) => {
         return {
           body: node.pullRequest.body,
-          changedFiles: node.pullRequest.changedFiles,
           closed: node.pullRequest.closed,
-          comments: node.pullRequest.comments,
+          comments: includeComments ? node.pullRequest.comments : { nodes: [] },
           createdAt: new Date(node.pullRequest.createdAt),
           isDraft: node.pullRequest.isDraft,
           merged: node.pullRequest.merged,
@@ -272,15 +275,7 @@ export async function getPullRequestContributionsByRepository(
           reviewDecision: node.pullRequest.reviewDecision,
           state: node.pullRequest.state,
           title: node.pullRequest.title,
-          url: node.pullRequest.url,
-          viewerDidAuthor: node.pullRequest.viewerDidAuthor,
-          viewerDidEdit: node.pullRequest.editor?.login === username,
-          viewerLatestReviewState: node.pullRequest.viewerLatestReview?.state,
-          viewerIsAssigned: node.pullRequest.assignees.nodes
-            .map((assignee) => assignee.login)
-            .includes(username),
-          viewerReviewRequested:
-            node.pullRequest.viewerLatestReviewRequest?.id !== undefined
+          url: node.pullRequest.url
         }
       }),
       totalCount: element.contributions.totalCount,
@@ -316,9 +311,10 @@ export async function getPullRequestContributionsByRepository(
         element.contributions.nodes.map((node) => {
           return {
             body: node.pullRequest.body,
-            changedFiles: node.pullRequest.changedFiles,
             closed: node.pullRequest.closed,
-            comments: node.pullRequest.comments,
+            comments: includeComments
+              ? node.pullRequest.comments
+              : { nodes: [] },
             createdAt: new Date(node.pullRequest.createdAt),
             isDraft: node.pullRequest.isDraft,
             merged: node.pullRequest.merged,
@@ -326,15 +322,7 @@ export async function getPullRequestContributionsByRepository(
             reviewDecision: node.pullRequest.reviewDecision,
             state: node.pullRequest.state,
             title: node.pullRequest.title,
-            url: node.pullRequest.url,
-            viewerDidAuthor: node.pullRequest.viewerDidAuthor,
-            viewerDidEdit: node.pullRequest.editor?.login === username,
-            viewerLatestReviewState: node.pullRequest.viewerLatestReview?.state,
-            viewerIsAssigned: node.pullRequest.assignees.nodes
-              .map((assignee) => assignee.login)
-              .includes(username),
-            viewerReviewRequested:
-              node.pullRequest.viewerLatestReviewRequest?.id !== undefined
+            url: node.pullRequest.url
           }
         })
       )
@@ -393,10 +381,7 @@ export async function getPullRequestReviewContributionsByRepository(
               number: node.pullRequest.number,
               state: node.pullRequest.state,
               title: node.pullRequest.title,
-              url: node.pullRequest.url,
-              viewerDidAuthor: node.pullRequest.viewerDidAuthor,
-              viewerLatestReviewState:
-                node.pullRequest.viewerLatestReview?.state
+              url: node.pullRequest.url
             },
             pullRequestReview: {
               body: node.pullRequestReview.body,
@@ -445,10 +430,7 @@ export async function getPullRequestReviewContributionsByRepository(
               number: node.pullRequest.number,
               state: node.pullRequest.state,
               title: node.pullRequest.title,
-              url: node.pullRequest.url,
-              viewerDidAuthor: node.pullRequest.viewerDidAuthor,
-              viewerLatestReviewState:
-                node.pullRequest.viewerLatestReview?.state
+              url: node.pullRequest.url
             },
             pullRequestReview: {
               body: node.pullRequestReview.body,

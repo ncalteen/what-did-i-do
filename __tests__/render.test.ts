@@ -36,9 +36,7 @@ const contributions: Contributions = {
           number: 1,
           state: 'OPEN',
           title: 'Hello, world!',
-          url: 'https://github.com/octocat/hello-world/issues/1',
-          viewerDidAuthor: true,
-          viewerIsAssigned: true
+          url: 'https://github.com/octocat/hello-world/issues/1'
         }
       ],
       totalCount: 1,
@@ -50,7 +48,6 @@ const contributions: Contributions = {
       contributions: [
         {
           body: 'Hello, world!',
-          changedFiles: 1,
           closed: false,
           comments: {
             nodes: []
@@ -61,11 +58,7 @@ const contributions: Contributions = {
           number: 1,
           state: 'OPEN',
           title: 'Hello, world!',
-          url: 'https://github.com/octocat/hello-world/pull/1',
-          viewerDidAuthor: true,
-          viewerDidEdit: false,
-          viewerIsAssigned: false,
-          viewerReviewRequested: false
+          url: 'https://github.com/octocat/hello-world/pull/1'
         }
       ],
       totalCount: 1,
@@ -84,8 +77,7 @@ const contributions: Contributions = {
             number: 1,
             state: 'OPEN',
             title: 'Hello, world!',
-            url: 'https://github.com/octocat/hello-world/pull/1',
-            viewerDidAuthor: true
+            url: 'https://github.com/octocat/hello-world/pull/1'
           },
           pullRequestReview: {
             body: 'Hello, world!',

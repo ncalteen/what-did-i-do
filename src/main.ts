@@ -23,12 +23,14 @@ export async function run() {
   const openAIModel = core.getInput('openai_model')
   const openAIProject = core.getInput('openai_project')
   const openAIToken = core.getInput('openai_token')
+  const includeComments = core.getBooleanInput('include_comments')
 
   core.info('Action Inputs:')
   core.info(`  Number of Days: ${numberOfDays}`)
   core.info(`  Owner: ${owner}`)
   core.info(`  Repository: ${repository}`)
   core.info(`  Project Number: ${projectNumber}`)
+  core.info(`  Include Comments: ${includeComments}`)
 
   // Get the start and end dates based on the number of days input
   const startDate = new Date(
@@ -46,7 +48,8 @@ export async function run() {
   // Get the contributions for each token
   const contributions = await utils.getContributions(
     [githubToken].concat(otherTokens),
-    startDate
+    startDate,
+    includeComments
   )
 
   // Generate markdown from the template

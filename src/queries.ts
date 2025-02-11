@@ -57,7 +57,6 @@ export const ISSUE_CONTRIBUTIONS_BY_REPOSITORY = `
                 state
                 title
                 url
-                viewerDidAuthor
               }
             }  
             pageInfo {
@@ -91,7 +90,6 @@ export const PULL_REQUEST_CONTRIBUTIONS_BY_REPOSITORY = `
                   }
                 }
                 body
-                changedFiles
                 closed
                 comments(first: 50, orderBy: {field: UPDATED_AT, direction: ASC}) {
                   nodes {
@@ -113,13 +111,6 @@ export const PULL_REQUEST_CONTRIBUTIONS_BY_REPOSITORY = `
                 state
                 title
                 url
-                viewerDidAuthor
-                viewerLatestReview {
-                  state
-                }
-                viewerLatestReviewRequest {
-                  id
-                }
               }
             }
             pageInfo {
@@ -157,13 +148,6 @@ export const PULL_REQUEST_REVIEW_CONTRIBUTIONS_BY_REPOSITORY = `
                 state
                 title
                 url
-                viewerDidAuthor
-                viewerLatestReview {
-                  state
-                }
-                viewerLatestReviewRequest {
-                  id
-                }
               }
               pullRequestReview {
                 body
