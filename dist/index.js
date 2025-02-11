@@ -31602,7 +31602,7 @@ function stringify(object, opts = {}) {
     return joined.length > 0 ? prefix + joined : '';
 }
 
-const VERSION = '4.77.0'; // x-release-please-version
+const VERSION = '4.82.0'; // x-release-please-version
 
 let auto = false;
 let kind = undefined;
@@ -31914,6 +31914,41 @@ class LineDecoder {
 LineDecoder.NEWLINE_CHARS = new Set(['\n', '\r']);
 LineDecoder.NEWLINE_REGEXP = /\r\n|[\n\r]/g;
 
+/**
+ * Most browsers don't yet have async iterable support for ReadableStream,
+ * and Node has a very different way of reading bytes from its "ReadableStream".
+ *
+ * This polyfill was pulled from https://github.com/MattiasBuelens/web-streams-polyfill/pull/122#issuecomment-1627354490
+ */
+function ReadableStreamToAsyncIterable(stream) {
+    if (stream[Symbol.asyncIterator])
+        return stream;
+    const reader = stream.getReader();
+    return {
+        async next() {
+            try {
+                const result = await reader.read();
+                if (result?.done)
+                    reader.releaseLock(); // release lock when stream becomes closed
+                return result;
+            }
+            catch (e) {
+                reader.releaseLock(); // release lock when stream becomes errored
+                throw e;
+            }
+        },
+        async return() {
+            const cancelPromise = reader.cancel();
+            reader.releaseLock();
+            await cancelPromise;
+            return { done: true, value: undefined };
+        },
+        [Symbol.asyncIterator]() {
+            return this;
+        },
+    };
+}
+
 class Stream {
     constructor(iterator, controller) {
         this.iterator = iterator;
@@ -31991,7 +32026,7 @@ class Stream {
         let consumed = false;
         async function* iterLines() {
             const lineDecoder = new LineDecoder();
-            const iter = readableStreamAsyncIterable(readableStream);
+            const iter = ReadableStreamToAsyncIterable(readableStream);
             for await (const chunk of iter) {
                 for (const line of lineDecoder.decode(chunk)) {
                     yield line;
@@ -32096,7 +32131,7 @@ async function* _iterSSEMessages(response, controller) {
     }
     const sseDecoder = new SSEDecoder();
     const lineDecoder = new LineDecoder();
-    const iter = readableStreamAsyncIterable(response.body);
+    const iter = ReadableStreamToAsyncIterable(response.body);
     for await (const sseChunk of iterSSEChunks(iter)) {
         for (const line of lineDecoder.decode(sseChunk)) {
             const sse = sseDecoder.decode(line);
@@ -32210,40 +32245,6 @@ function partition(str, delimiter) {
         return [str.substring(0, index), delimiter, str.substring(index + delimiter.length)];
     }
     return [str, '', ''];
-}
-/**
- * Most browsers don't yet have async iterable support for ReadableStream,
- * and Node has a very different way of reading bytes from its "ReadableStream".
- *
- * This polyfill was pulled from https://github.com/MattiasBuelens/web-streams-polyfill/pull/122#issuecomment-1627354490
- */
-function readableStreamAsyncIterable(stream) {
-    if (stream[Symbol.asyncIterator])
-        return stream;
-    const reader = stream.getReader();
-    return {
-        async next() {
-            try {
-                const result = await reader.read();
-                if (result?.done)
-                    reader.releaseLock(); // release lock when stream becomes closed
-                return result;
-            }
-            catch (e) {
-                reader.releaseLock(); // release lock when stream becomes errored
-                throw e;
-            }
-        },
-        async return() {
-            const cancelPromise = reader.cancel();
-            reader.releaseLock();
-            await cancelPromise;
-            return { done: true, value: undefined };
-        },
-        [Symbol.asyncIterator]() {
-            return this;
-        },
-    };
 }
 
 const isResponseLike = (value) => value != null &&
@@ -32743,9 +32744,18 @@ class APIClient {
         if (signal)
             signal.addEventListener('abort', () => controller.abort());
         const timeout = setTimeout(() => controller.abort(), ms);
+        const fetchOptions = {
+            signal: controller.signal,
+            ...options,
+        };
+        if (fetchOptions.method) {
+            // Custom methods like 'patch' need to be uppercased
+            // See https://github.com/nodejs/undici/issues/2294
+            fetchOptions.method = fetchOptions.method.toUpperCase();
+        }
         return (
         // use undefined this binding; fetch errors if bound to something else in browser/cloudflare
-        this.fetch.call(undefined, url, { signal: controller.signal, ...options }).finally(() => {
+        this.fetch.call(undefined, url, fetchOptions).finally(() => {
             clearTimeout(timeout);
         }));
     }
@@ -33140,9 +33150,36 @@ function applyHeadersMut(targetHeaders, newHeaders) {
         }
     }
 }
+const SENSITIVE_HEADERS = new Set(['authorization', 'api-key']);
 function debug(action, ...args) {
     if (typeof process !== 'undefined' && process?.env?.['DEBUG'] === 'true') {
-        console.log(`OpenAI:DEBUG:${action}`, ...args);
+        const modifiedArgs = args.map((arg) => {
+            if (!arg) {
+                return arg;
+            }
+            // Check for sensitive headers in request body 'headers' object
+            if (arg['headers']) {
+                // clone so we don't mutate
+                const modifiedArg = { ...arg, headers: { ...arg['headers'] } };
+                for (const header in arg['headers']) {
+                    if (SENSITIVE_HEADERS.has(header.toLowerCase())) {
+                        modifiedArg['headers'][header] = 'REDACTED';
+                    }
+                }
+                return modifiedArg;
+            }
+            let modifiedArg = null;
+            // Check for sensitive headers in headers object
+            for (const header in arg) {
+                if (SENSITIVE_HEADERS.has(header.toLowerCase())) {
+                    // avoid making a copy until we need to
+                    modifiedArg ?? (modifiedArg = { ...arg });
+                    modifiedArg[header] = 'REDACTED';
+                }
+            }
+            return modifiedArg ?? arg;
+        });
+        console.log(`OpenAI:DEBUG:${action}`, ...modifiedArgs);
     }
 }
 /**
@@ -33284,7 +33321,12 @@ class Speech extends APIResource {
      * Generates audio from the input text.
      */
     create(body, options) {
-        return this._client.post('/audio/speech', { body, ...options, __binaryResponse: true });
+        return this._client.post('/audio/speech', {
+            body,
+            ...options,
+            headers: { Accept: 'application/octet-stream', ...options?.headers },
+            __binaryResponse: true,
+        });
     }
 }
 
@@ -34885,6 +34927,35 @@ class Chat extends APIResource {
     Chat.Completions = Completions$1;
 })(Chat || (Chat = {}));
 
+// File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
+class Sessions extends APIResource {
+    /**
+     * Create an ephemeral API token for use in client-side applications with the
+     * Realtime API. Can be configured with the same session parameters as the
+     * `session.update` client event.
+     *
+     * It responds with a session object, plus a `client_secret` key which contains a
+     * usable ephemeral API token that can be used to authenticate browser clients for
+     * the Realtime API.
+     */
+    create(body, options) {
+        return this._client.post('/realtime/sessions', {
+            body,
+            ...options,
+            headers: { 'OpenAI-Beta': 'assistants=v2', ...options?.headers },
+        });
+    }
+}
+
+// File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
+class Realtime extends APIResource {
+    constructor() {
+        super(...arguments);
+        this.sessions = new Sessions(this._client);
+    }
+}
+Realtime.Sessions = Sessions;
+
 var __classPrivateFieldGet = (undefined && undefined.__classPrivateFieldGet) || function (receiver, state, kind, f) {
     if (kind === "a" && !f) throw new TypeError("Private accessor was defined without a getter");
     if (typeof state === "function" ? receiver !== state || !f : !state.has(receiver)) throw new TypeError("Cannot read private member from an object whose class did not declare it");
@@ -36062,12 +36133,14 @@ VectorStores.FileBatches = FileBatches;
 class Beta extends APIResource {
     constructor() {
         super(...arguments);
+        this.realtime = new Realtime(this._client);
         this.vectorStores = new VectorStores(this._client);
         this.chat = new Chat(this._client);
         this.assistants = new Assistants(this._client);
         this.threads = new Threads(this._client);
     }
 }
+Beta.Realtime = Realtime;
 Beta.VectorStores = VectorStores;
 Beta.VectorStoresPage = VectorStoresPage;
 Beta.Assistants = Assistants;
@@ -36141,7 +36214,11 @@ class Files extends APIResource {
      * Returns the contents of the specified file.
      */
     content(fileId, options) {
-        return this._client.get(`/files/${fileId}/content`, { ...options, __binaryResponse: true });
+        return this._client.get(`/files/${fileId}/content`, {
+            ...options,
+            headers: { Accept: 'application/binary', ...options?.headers },
+            __binaryResponse: true,
+        });
     }
     /**
      * Returns the contents of the specified file.
@@ -36149,10 +36226,7 @@ class Files extends APIResource {
      * @deprecated The `.content()` method should be used instead
      */
     retrieveContent(fileId, options) {
-        return this._client.get(`/files/${fileId}/content`, {
-            ...options,
-            headers: { Accept: 'application/json', ...options?.headers },
-        });
+        return this._client.get(`/files/${fileId}/content`, options);
     }
     /**
      * Waits for the given file to be processed, default timeout is 30 mins.
