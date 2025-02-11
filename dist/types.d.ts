@@ -56,7 +56,6 @@ export type GraphQLIssueContributionsByRepository = {
                             state: string;
                             title: string;
                             url: string;
-                            viewerDidAuthor: boolean;
                         };
                     }[];
                     pageInfo: {
@@ -87,7 +86,6 @@ export type GraphQLPullRequestContributionsByRepository = {
                                 }[];
                             };
                             body: string;
-                            changedFiles: number;
                             closed: boolean;
                             comments: {
                                 nodes: {
@@ -109,13 +107,6 @@ export type GraphQLPullRequestContributionsByRepository = {
                             state: PullRequestState;
                             title: string;
                             url: string;
-                            viewerDidAuthor: boolean;
-                            viewerLatestReview?: {
-                                state: PullRequestReviewState;
-                            };
-                            viewerLatestReviewRequest?: {
-                                id: string;
-                            };
                         };
                     }[];
                     pageInfo: {
@@ -151,13 +142,6 @@ export type GraphQLPullRequestReviewContributionsByRepository = {
                             state: PullRequestState;
                             title: string;
                             url: string;
-                            viewerDidAuthor: boolean;
-                            viewerLatestReview?: {
-                                state: PullRequestReviewState;
-                            };
-                            viewerLatestReviewRequest?: {
-                                id: string;
-                            };
                         };
                         pullRequestReview: {
                             body: string;
@@ -223,8 +207,6 @@ export type IssueContributionsByRepository = {
             state: string;
             title: string;
             url: string;
-            viewerDidAuthor: boolean;
-            viewerIsAssigned: boolean;
         }[];
         totalCount: number;
         url: string;
@@ -235,7 +217,6 @@ export type PullRequestContributionsByRepository = {
     [key: string]: {
         contributions: {
             body: string;
-            changedFiles: number;
             closed: boolean;
             comments: {
                 nodes: {
@@ -254,11 +235,6 @@ export type PullRequestContributionsByRepository = {
             state: PullRequestState;
             title: string;
             url: string;
-            viewerDidAuthor: boolean;
-            viewerDidEdit: boolean;
-            viewerLatestReviewState?: PullRequestReviewState;
-            viewerIsAssigned: boolean;
-            viewerReviewRequested: boolean;
         }[];
         totalCount: number;
         url: string;
@@ -277,8 +253,6 @@ export type PullRequestReviewContributionsByRepository = {
                 state: PullRequestState;
                 title: string;
                 url: string;
-                viewerDidAuthor: boolean;
-                viewerLatestReviewState?: PullRequestReviewState;
             };
             pullRequestReview: {
                 body: string;
@@ -302,7 +276,6 @@ export type IssueSummary = {
 };
 /** Pull Request Summary */
 export type PullRequestSummary = {
-    changedFiles: number;
     createdAt: string;
     number: number;
     repository: string;

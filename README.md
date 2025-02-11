@@ -28,6 +28,10 @@ contributions.
   - Default: `${{ github.repository }}`
   - Description: The repository to create the summary issue in (`owner/name`
     format)
+- `include_comments`
+  - Default: `false`
+  - Description: Include comments in the OpenAI prompt (this can cause the
+    context window to be exceeded!)
 
 > [!NOTE]
 >

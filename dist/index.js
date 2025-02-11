@@ -36564,7 +36564,6 @@ const ISSUE_CONTRIBUTIONS_BY_REPOSITORY = `
                 state
                 title
                 url
-                viewerDidAuthor
               }
             }  
             pageInfo {
@@ -36597,7 +36596,6 @@ const PULL_REQUEST_CONTRIBUTIONS_BY_REPOSITORY = `
                   }
                 }
                 body
-                changedFiles
                 closed
                 comments(first: 50, orderBy: {field: UPDATED_AT, direction: ASC}) {
                   nodes {
@@ -36619,13 +36617,6 @@ const PULL_REQUEST_CONTRIBUTIONS_BY_REPOSITORY = `
                 state
                 title
                 url
-                viewerDidAuthor
-                viewerLatestReview {
-                  state
-                }
-                viewerLatestReviewRequest {
-                  id
-                }
               }
             }
             pageInfo {
@@ -36662,13 +36653,6 @@ const PULL_REQUEST_REVIEW_CONTRIBUTIONS_BY_REPOSITORY = `
                 state
                 title
                 url
-                viewerDidAuthor
-                viewerLatestReview {
-                  state
-                }
-                viewerLatestReviewRequest {
-                  id
-                }
               }
               pullRequestReview {
                 body
@@ -37711,7 +37695,6 @@ function generatePullRequestSummary(contributions) {
     for (const [key, value] of Object.entries(contributions.pullRequestContributionsByRepository)) {
         for (const element of value.contributions) {
             pullRequests.push({
-                changedFiles: element.changedFiles,
                 createdAt: element.createdAt.toISOString().substring(0, 10),
                 number: element.number,
                 repository: key,
@@ -37774,9 +37757,10 @@ function generatePullRequestReviewSummary(contributions) {
  *
  * @param tokens A list of GitHub tokens.
  * @param startDate ISO 8601 date.
+ * @param includeComments Whether to include comments in the contributions.
  * @returns Object with the total contribution stats.
  */
-async function getContributions(tokens, startDate) {
+async function getContributions(tokens, startDate, includeComments) {
     const contributions = {
         totalCommitContributions: 0,
         totalIssueContributions: 0,
@@ -37824,10 +37808,10 @@ async function getContributions(tokens, startDate) {
         contributions.totalRepositoryContributions +=
             clientContributions.user.contributionsCollection.totalRepositoryContributions;
         // Get the issue contributions grouped by repository
-        const clientIssueContributionsByRepository = await getIssueContributionsByRepository(octokit, username, startDate);
+        const clientIssueContributionsByRepository = await getIssueContributionsByRepository(octokit, username, startDate, includeComments);
         coreExports.info(JSON.stringify(clientIssueContributionsByRepository, null, 2));
         // Get the pull request contributions grouped by repository
-        const clientPullRequestContributionsByRepository = await getPullRequestContributionsByRepository(octokit, username, startDate);
+        const clientPullRequestContributionsByRepository = await getPullRequestContributionsByRepository(octokit, username, startDate, includeComments);
         coreExports.info(JSON.stringify(clientPullRequestContributionsByRepository, null, 2));
         // Get the pull request review contributions grouped by repository
         const clientPullRequestReviewContributionsByRepository = await getPullRequestReviewContributionsByRepository(octokit, username, startDate);
@@ -37839,7 +37823,7 @@ async function getContributions(tokens, startDate) {
         };
         contributions.pullRequestContributionsByRepository = {
             ...contributions.pullRequestContributionsByRepository,
-            ...(await getPullRequestContributionsByRepository(octokit, username, startDate))
+            ...(await getPullRequestContributionsByRepository(octokit, username, startDate, includeComments))
         };
         contributions.pullRequestReviewContributionsByRepository = {
             ...contributions.pullRequestReviewContributionsByRepository,
@@ -37859,7 +37843,7 @@ async function getContributions(tokens, startDate) {
  */
 async function getIssueContributionsByRepository(
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-octokit, username, startDate) {
+octokit, username, startDate, includeComments) {
     const issueContributionsByRepository = {};
     let endCursor = undefined;
     let issueContributions = await octokit.graphql(ISSUE_CONTRIBUTIONS_BY_REPOSITORY, {
@@ -37874,16 +37858,12 @@ octokit, username, startDate) {
                 .map((node) => {
                 return {
                     body: node.issue.body,
-                    comments: node.issue.comments,
+                    comments: includeComments ? node.issue.comments : { nodes: [] },
                     createdAt: new Date(node.issue.createdAt),
                     number: node.issue.number,
                     state: node.issue.state,
                     title: node.issue.title,
-                    url: node.issue.url,
-                    viewerDidAuthor: node.issue.viewerDidAuthor,
-                    viewerIsAssigned: node.issue.assignees.nodes
-                        .map((assignee) => assignee.login)
-                        .includes(username)
+                    url: node.issue.url
                 };
             })
                 .filter((node) => {
@@ -37908,16 +37888,12 @@ octokit, username, startDate) {
             issueContributionsByRepository[element.repository.nameWithOwner].contributions.concat(element.contributions.nodes.map((node) => {
                 return {
                     body: node.issue.body,
-                    comments: node.issue.comments,
+                    comments: includeComments ? node.issue.comments : { nodes: [] },
                     createdAt: new Date(node.issue.createdAt),
                     number: node.issue.number,
                     state: node.issue.state,
                     title: node.issue.title,
-                    url: node.issue.url,
-                    viewerDidAuthor: node.issue.viewerDidAuthor,
-                    viewerIsAssigned: node.issue.assignees.nodes
-                        .map((assignee) => assignee.login)
-                        .includes(username)
+                    url: node.issue.url
                 };
             }));
         }
@@ -37930,11 +37906,12 @@ octokit, username, startDate) {
  * @param octokit The authenticated Octokit instance.
  * @param username The GitHub username.
  * @param startDate The start date for the contributions.
+ * @param includeComments Whether to include comments in the contributions.
  * @returns The pull request contributions grouped by repository.
  */
 async function getPullRequestContributionsByRepository(
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-octokit, username, startDate) {
+octokit, username, startDate, includeComments) {
     const pullRequestContributionsByRepository = {};
     let endCursor = undefined;
     let pullRequestContributions = await octokit.graphql(PULL_REQUEST_CONTRIBUTIONS_BY_REPOSITORY, {
@@ -37948,9 +37925,8 @@ octokit, username, startDate) {
             contributions: element.contributions.nodes.map((node) => {
                 return {
                     body: node.pullRequest.body,
-                    changedFiles: node.pullRequest.changedFiles,
                     closed: node.pullRequest.closed,
-                    comments: node.pullRequest.comments,
+                    comments: includeComments ? node.pullRequest.comments : { nodes: [] },
                     createdAt: new Date(node.pullRequest.createdAt),
                     isDraft: node.pullRequest.isDraft,
                     merged: node.pullRequest.merged,
@@ -37958,14 +37934,7 @@ octokit, username, startDate) {
                     reviewDecision: node.pullRequest.reviewDecision,
                     state: node.pullRequest.state,
                     title: node.pullRequest.title,
-                    url: node.pullRequest.url,
-                    viewerDidAuthor: node.pullRequest.viewerDidAuthor,
-                    viewerDidEdit: node.pullRequest.editor?.login === username,
-                    viewerLatestReviewState: node.pullRequest.viewerLatestReview?.state,
-                    viewerIsAssigned: node.pullRequest.assignees.nodes
-                        .map((assignee) => assignee.login)
-                        .includes(username),
-                    viewerReviewRequested: node.pullRequest.viewerLatestReviewRequest?.id !== undefined
+                    url: node.pullRequest.url
                 };
             }),
             totalCount: element.contributions.totalCount,
@@ -37986,9 +37955,10 @@ octokit, username, startDate) {
             pullRequestContributionsByRepository[element.repository.nameWithOwner].contributions.concat(element.contributions.nodes.map((node) => {
                 return {
                     body: node.pullRequest.body,
-                    changedFiles: node.pullRequest.changedFiles,
                     closed: node.pullRequest.closed,
-                    comments: node.pullRequest.comments,
+                    comments: includeComments
+                        ? node.pullRequest.comments
+                        : { nodes: [] },
                     createdAt: new Date(node.pullRequest.createdAt),
                     isDraft: node.pullRequest.isDraft,
                     merged: node.pullRequest.merged,
@@ -37996,14 +37966,7 @@ octokit, username, startDate) {
                     reviewDecision: node.pullRequest.reviewDecision,
                     state: node.pullRequest.state,
                     title: node.pullRequest.title,
-                    url: node.pullRequest.url,
-                    viewerDidAuthor: node.pullRequest.viewerDidAuthor,
-                    viewerDidEdit: node.pullRequest.editor?.login === username,
-                    viewerLatestReviewState: node.pullRequest.viewerLatestReview?.state,
-                    viewerIsAssigned: node.pullRequest.assignees.nodes
-                        .map((assignee) => assignee.login)
-                        .includes(username),
-                    viewerReviewRequested: node.pullRequest.viewerLatestReviewRequest?.id !== undefined
+                    url: node.pullRequest.url
                 };
             }));
         }
@@ -38047,9 +38010,7 @@ octokit, username, startDate) {
                         number: node.pullRequest.number,
                         state: node.pullRequest.state,
                         title: node.pullRequest.title,
-                        url: node.pullRequest.url,
-                        viewerDidAuthor: node.pullRequest.viewerDidAuthor,
-                        viewerLatestReviewState: node.pullRequest.viewerLatestReview?.state
+                        url: node.pullRequest.url
                     },
                     pullRequestReview: {
                         body: node.pullRequestReview.body,
@@ -38083,9 +38044,7 @@ octokit, username, startDate) {
                         number: node.pullRequest.number,
                         state: node.pullRequest.state,
                         title: node.pullRequest.title,
-                        url: node.pullRequest.url,
-                        viewerDidAuthor: node.pullRequest.viewerDidAuthor,
-                        viewerLatestReviewState: node.pullRequest.viewerLatestReview?.state
+                        url: node.pullRequest.url
                     },
                     pullRequestReview: {
                         body: node.pullRequestReview.body,
@@ -38149,11 +38108,13 @@ async function run() {
     const openAIModel = coreExports.getInput('openai_model');
     const openAIProject = coreExports.getInput('openai_project');
     const openAIToken = coreExports.getInput('openai_token');
+    const includeComments = coreExports.getBooleanInput('include_comments');
     coreExports.info('Action Inputs:');
     coreExports.info(`  Number of Days: ${numberOfDays}`);
     coreExports.info(`  Owner: ${owner}`);
     coreExports.info(`  Repository: ${repository}`);
     coreExports.info(`  Project Number: ${projectNumber}`);
+    coreExports.info(`  Include Comments: ${includeComments}`);
     // Get the start and end dates based on the number of days input
     const startDate = new Date(new Date().getTime() - numberOfDays * 24 * 60 * 60 * 1000);
     const endDate = new Date();
@@ -38163,7 +38124,7 @@ async function run() {
     const octokit = githubExports.getOctokit(githubToken);
     const username = await getAuthenticatedUser(octokit);
     // Get the contributions for each token
-    const contributions = await getContributions([githubToken].concat(otherTokens), startDate);
+    const contributions = await getContributions([githubToken].concat(otherTokens), startDate, includeComments);
     // Generate markdown from the template
     const body = generateMarkdown(contributions, endDate, startDate, username);
     // Write the output to a new issue and assign to the project
