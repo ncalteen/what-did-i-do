@@ -31469,7 +31469,7 @@ const safeJSON = (text) => {
 // File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
-const VERSION = '5.11.0'; // x-release-please-version
+const VERSION = '5.16.0'; // x-release-please-version
 
 // File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
 const isRunningInBrowser = () => {
@@ -32809,6 +32809,36 @@ class CursorPage extends AbstractPage {
         };
     }
 }
+class ConversationCursorPage extends AbstractPage {
+    constructor(client, response, body, options) {
+        super(client, response, body, options);
+        this.data = body.data || [];
+        this.has_more = body.has_more || false;
+        this.last_id = body.last_id || '';
+    }
+    getPaginatedItems() {
+        return this.data ?? [];
+    }
+    hasNextPage() {
+        if (this.has_more === false) {
+            return false;
+        }
+        return super.hasNextPage();
+    }
+    nextPageRequestOptions() {
+        const cursor = this.last_id;
+        if (!cursor) {
+            return null;
+        }
+        return {
+            ...this.options,
+            query: {
+                ...maybeObj(this.options.query),
+                after: cursor,
+            },
+        };
+    }
+}
 
 const checkFileSupport = () => {
     if (typeof File === 'undefined') {
@@ -33102,8 +33132,119 @@ let Messages$1 = class Messages extends APIResource {
     }
 };
 
-function isRunnableFunctionWithParse(fn) {
-    return typeof fn.parse === 'function';
+function isChatCompletionFunctionTool(tool) {
+    return tool !== undefined && 'function' in tool && tool.function !== undefined;
+}
+function isAutoParsableResponseFormat(response_format) {
+    return response_format?.['$brand'] === 'auto-parseable-response-format';
+}
+function isAutoParsableTool$1(tool) {
+    return tool?.['$brand'] === 'auto-parseable-tool';
+}
+function maybeParseChatCompletion(completion, params) {
+    if (!params || !hasAutoParseableInput$1(params)) {
+        return {
+            ...completion,
+            choices: completion.choices.map((choice) => {
+                assertToolCallsAreChatCompletionFunctionToolCalls(choice.message.tool_calls);
+                return {
+                    ...choice,
+                    message: {
+                        ...choice.message,
+                        parsed: null,
+                        ...(choice.message.tool_calls ?
+                            {
+                                tool_calls: choice.message.tool_calls,
+                            }
+                            : undefined),
+                    },
+                };
+            }),
+        };
+    }
+    return parseChatCompletion(completion, params);
+}
+function parseChatCompletion(completion, params) {
+    const choices = completion.choices.map((choice) => {
+        if (choice.finish_reason === 'length') {
+            throw new LengthFinishReasonError();
+        }
+        if (choice.finish_reason === 'content_filter') {
+            throw new ContentFilterFinishReasonError();
+        }
+        assertToolCallsAreChatCompletionFunctionToolCalls(choice.message.tool_calls);
+        return {
+            ...choice,
+            message: {
+                ...choice.message,
+                ...(choice.message.tool_calls ?
+                    {
+                        tool_calls: choice.message.tool_calls?.map((toolCall) => parseToolCall$1(params, toolCall)) ?? undefined,
+                    }
+                    : undefined),
+                parsed: choice.message.content && !choice.message.refusal ?
+                    parseResponseFormat(params, choice.message.content)
+                    : null,
+            },
+        };
+    });
+    return { ...completion, choices };
+}
+function parseResponseFormat(params, content) {
+    if (params.response_format?.type !== 'json_schema') {
+        return null;
+    }
+    if (params.response_format?.type === 'json_schema') {
+        if ('$parseRaw' in params.response_format) {
+            const response_format = params.response_format;
+            return response_format.$parseRaw(content);
+        }
+        return JSON.parse(content);
+    }
+    return null;
+}
+function parseToolCall$1(params, toolCall) {
+    const inputTool = params.tools?.find((inputTool) => isChatCompletionFunctionTool(inputTool) && inputTool.function?.name === toolCall.function.name); // TS doesn't narrow based on isChatCompletionTool
+    return {
+        ...toolCall,
+        function: {
+            ...toolCall.function,
+            parsed_arguments: isAutoParsableTool$1(inputTool) ? inputTool.$parseRaw(toolCall.function.arguments)
+                : inputTool?.function.strict ? JSON.parse(toolCall.function.arguments)
+                    : null,
+        },
+    };
+}
+function shouldParseToolCall(params, toolCall) {
+    if (!params || !('tools' in params) || !params.tools) {
+        return false;
+    }
+    const inputTool = params.tools?.find((inputTool) => isChatCompletionFunctionTool(inputTool) && inputTool.function?.name === toolCall.function.name);
+    return (isChatCompletionFunctionTool(inputTool) &&
+        (isAutoParsableTool$1(inputTool) || inputTool?.function.strict || false));
+}
+function hasAutoParseableInput$1(params) {
+    if (isAutoParsableResponseFormat(params.response_format)) {
+        return true;
+    }
+    return (params.tools?.some((t) => isAutoParsableTool$1(t) || (t.type === 'function' && t.function.strict === true)) ?? false);
+}
+function assertToolCallsAreChatCompletionFunctionToolCalls(toolCalls) {
+    for (const toolCall of toolCalls || []) {
+        if (toolCall.type !== 'function') {
+            throw new OpenAIError(`Currently only \`function\` tool calls are supported; Received \`${toolCall.type}\``);
+        }
+    }
+}
+function validateInputTools(tools) {
+    for (const tool of tools ?? []) {
+        if (tool.type !== 'function') {
+            throw new OpenAIError(`Currently only \`function\` tool types support auto-parsing; Received \`${tool.type}\``);
+        }
+        if (tool.function.strict !== true) {
+            throw new OpenAIError(`The \`${tool.function.name}\` tool is not marked with \`strict: true\`. Only strict function tools can be auto-parsed`);
+        }
+    }
 }
 
 const isAssistantMessage = (message) => {
@@ -33297,104 +33438,8 @@ _EventStream_connectedPromise = new WeakMap(), _EventStream_resolveConnectedProm
     return this._emit('error', new OpenAIError(String(error)));
 };
 
-function isAutoParsableResponseFormat(response_format) {
-    return response_format?.['$brand'] === 'auto-parseable-response-format';
-}
-function isAutoParsableTool$1(tool) {
-    return tool?.['$brand'] === 'auto-parseable-tool';
-}
-function maybeParseChatCompletion(completion, params) {
-    if (!params || !hasAutoParseableInput$1(params)) {
-        return {
-            ...completion,
-            choices: completion.choices.map((choice) => ({
-                ...choice,
-                message: {
-                    ...choice.message,
-                    parsed: null,
-                    ...(choice.message.tool_calls ?
-                        {
-                            tool_calls: choice.message.tool_calls,
-                        }
-                        : undefined),
-                },
-            })),
-        };
-    }
-    return parseChatCompletion(completion, params);
-}
-function parseChatCompletion(completion, params) {
-    const choices = completion.choices.map((choice) => {
-        if (choice.finish_reason === 'length') {
-            throw new LengthFinishReasonError();
-        }
-        if (choice.finish_reason === 'content_filter') {
-            throw new ContentFilterFinishReasonError();
-        }
-        return {
-            ...choice,
-            message: {
-                ...choice.message,
-                ...(choice.message.tool_calls ?
-                    {
-                        tool_calls: choice.message.tool_calls?.map((toolCall) => parseToolCall$1(params, toolCall)) ?? undefined,
-                    }
-                    : undefined),
-                parsed: choice.message.content && !choice.message.refusal ?
-                    parseResponseFormat(params, choice.message.content)
-                    : null,
-            },
-        };
-    });
-    return { ...completion, choices };
-}
-function parseResponseFormat(params, content) {
-    if (params.response_format?.type !== 'json_schema') {
-        return null;
-    }
-    if (params.response_format?.type === 'json_schema') {
-        if ('$parseRaw' in params.response_format) {
-            const response_format = params.response_format;
-            return response_format.$parseRaw(content);
-        }
-        return JSON.parse(content);
-    }
-    return null;
-}
-function parseToolCall$1(params, toolCall) {
-    const inputTool = params.tools?.find((inputTool) => inputTool.function?.name === toolCall.function.name);
-    return {
-        ...toolCall,
-        function: {
-            ...toolCall.function,
-            parsed_arguments: isAutoParsableTool$1(inputTool) ? inputTool.$parseRaw(toolCall.function.arguments)
-                : inputTool?.function.strict ? JSON.parse(toolCall.function.arguments)
-                    : null,
-        },
-    };
-}
-function shouldParseToolCall(params, toolCall) {
-    if (!params) {
-        return false;
-    }
-    const inputTool = params.tools?.find((inputTool) => inputTool.function?.name === toolCall.function.name);
-    return isAutoParsableTool$1(inputTool) || inputTool?.function.strict || false;
-}
-function hasAutoParseableInput$1(params) {
-    if (isAutoParsableResponseFormat(params.response_format)) {
-        return true;
-    }
-    return (params.tools?.some((t) => isAutoParsableTool$1(t) || (t.type === 'function' && t.function.strict === true)) ?? false);
-}
-function validateInputTools(tools) {
-    for (const tool of tools ?? []) {
-        if (tool.type !== 'function') {
-            throw new OpenAIError(`Currently only \`function\` tool types support auto-parsing; Received \`${tool.type}\``);
-        }
-        if (tool.function.strict !== true) {
-            throw new OpenAIError(`The \`${tool.function.name}\` tool is not marked with \`strict: true\`. Only strict function tools can be auto-parsed`);
-        }
-    }
+function isRunnableFunctionWithParse(fn) {
+    return typeof fn.parse === 'function';
 }
 
 var _AbstractChatCompletionRunner_instances, _AbstractChatCompletionRunner_getFinalContent, _AbstractChatCompletionRunner_getFinalMessage, _AbstractChatCompletionRunner_getFinalFunctionToolCall, _AbstractChatCompletionRunner_getFinalFunctionToolCallResult, _AbstractChatCompletionRunner_calculateTotalUsage, _AbstractChatCompletionRunner_validateParams, _AbstractChatCompletionRunner_stringifyFunctionCallResult;
@@ -33520,7 +33565,7 @@ class AbstractChatCompletionRunner extends EventStream {
     async _runTools(client, params, options) {
         const role = 'tool';
         const { tool_choice = 'auto', stream, ...restParams } = params;
-        const singleFunctionToCall = typeof tool_choice !== 'string' && tool_choice?.function?.name;
+        const singleFunctionToCall = typeof tool_choice !== 'string' && tool_choice.type === 'function' && tool_choice?.function?.name;
         const { maxChatCompletions = DEFAULT_MAX_CHAT_COMPLETIONS } = options || {};
         // TODO(someday): clean this logic up
         const inputTools = params.tools.map((tool) => {
@@ -33638,7 +33683,7 @@ _AbstractChatCompletionRunner_instances = new WeakSet(), _AbstractChatCompletion
     for (let i = this.messages.length - 1; i >= 0; i--) {
         const message = this.messages[i];
         if (isAssistantMessage(message) && message?.tool_calls?.length) {
-            return message.tool_calls.at(-1)?.function;
+            return message.tool_calls.filter((x) => x.type === 'function').at(-1)?.function;
         }
     }
     return;
@@ -34116,7 +34161,7 @@ class ChatCompletionStream extends AbstractChatCompletionRunner {
             throw new Error('tool call snapshot missing `type`');
         }
         if (toolCallSnapshot.type === 'function') {
-            const inputTool = __classPrivateFieldGet(this, _ChatCompletionStream_params, "f")?.tools?.find((tool) => tool.type === 'function' && tool.function.name === toolCallSnapshot.function.name);
+            const inputTool = __classPrivateFieldGet(this, _ChatCompletionStream_params, "f")?.tools?.find((tool) => isChatCompletionFunctionTool(tool) && tool.function.name === toolCallSnapshot.function.name); // TS doesn't narrow based on isChatCompletionTool
             this._emit('tool_calls.function.arguments.done', {
                 name: toolCallSnapshot.function.name,
                 index: toolCallIndex,
@@ -35885,6 +35930,74 @@ class Containers extends APIResource {
 Containers.Files = Files$2;
 
 // File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
+class Items extends APIResource {
+    /**
+     * Create items in a conversation with the given ID.
+     */
+    create(conversationID, params, options) {
+        const { include, ...body } = params;
+        return this._client.post(path `/conversations/${conversationID}/items`, {
+            query: { include },
+            body,
+            ...options,
+        });
+    }
+    /**
+     * Get a single item from a conversation with the given IDs.
+     */
+    retrieve(itemID, params, options) {
+        const { conversation_id, ...query } = params;
+        return this._client.get(path `/conversations/${conversation_id}/items/${itemID}`, { query, ...options });
+    }
+    /**
+     * List all items for a conversation with the given ID.
+     */
+    list(conversationID, query = {}, options) {
+        return this._client.getAPIList(path `/conversations/${conversationID}/items`, (ConversationCursorPage), { query, ...options });
+    }
+    /**
+     * Delete an item from a conversation with the given IDs.
+     */
+    delete(itemID, params, options) {
+        const { conversation_id } = params;
+        return this._client.delete(path `/conversations/${conversation_id}/items/${itemID}`, options);
+    }
+}
+
+// File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
+class Conversations extends APIResource {
+    constructor() {
+        super(...arguments);
+        this.items = new Items(this._client);
+    }
+    /**
+     * Create a conversation.
+     */
+    create(body, options) {
+        return this._client.post('/conversations', { body, ...options });
+    }
+    /**
+     * Get a conversation with the given ID.
+     */
+    retrieve(conversationID, options) {
+        return this._client.get(path `/conversations/${conversationID}`, options);
+    }
+    /**
+     * Update a conversation's metadata with the given ID.
+     */
+    update(conversationID, body, options) {
+        return this._client.post(path `/conversations/${conversationID}`, { body, ...options });
+    }
+    /**
+     * Delete a conversation with the given ID.
+     */
+    delete(conversationID, options) {
+        return this._client.delete(path `/conversations/${conversationID}`, options);
+    }
+}
+Conversations.Items = Items;
+
+// File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
 class Embeddings extends APIResource {
     /**
      * Creates an embedding vector representing the input text.
@@ -36048,7 +36161,7 @@ let Files$1 = class Files extends APIResource {
     /**
      * Upload a file that can be used across various endpoints. Individual files can be
      * up to 512 MB, and the size of all files uploaded by one organization can be up
-     * to 100 GB.
+     * to 1 TB.
      *
      * The Assistants API supports files up to 2 million tokens and of specific file
      * types. See the
@@ -37477,6 +37590,7 @@ class OpenAI {
         this.batches = new Batches(this);
         this.uploads = new Uploads(this);
         this.responses = new Responses(this);
+        this.conversations = new Conversations(this);
         this.evals = new Evals(this);
         this.containers = new Containers(this);
         if (apiKey === undefined) {
@@ -37867,7 +37981,7 @@ class OpenAI {
                 // Preserve legacy string encoding behavior for now
                 headers.values.has('content-type')) ||
             // `Blob` is superset of `File`
-            body instanceof Blob ||
+            (globalThis.Blob && body instanceof globalThis.Blob) ||
             // `FormData` -> `multipart/form-data`
             body instanceof FormData ||
             // `URLSearchParams` -> `application/x-www-form-urlencoded`
@@ -37922,6 +38036,7 @@ OpenAI.Beta = Beta;
 OpenAI.Batches = Batches;
 OpenAI.Uploads = Uploads;
 OpenAI.Responses = Responses;
+OpenAI.Conversations = Conversations;
 OpenAI.Evals = Evals;
 OpenAI.Containers = Containers;
 
