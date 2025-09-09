@@ -118,10 +118,16 @@ jobs:
         id: report
         uses: ncalteen/what-did-i-do@vX.Y.Z
         with:
-          tokens_and_api_urls: |
+          contribution_tokens_api_urls: |
             ${{ secrets.MY_GHEC_TOKEN }}@https://api.github.com
             ${{ secrets.MY_GHE_TOKEN }}@https://api.mycompany.ghe.com
+          include_comments: false
           num_days: 14
-          repository: ncalteen/todo
+          openai_model: gpt-4o-mini
+          openai_project: ${{ secrets.OPENAI_PROJECT }}
+          openai_token: ${{ secrets.OPENAI_TOKEN }}
+          summary_issue_api_url: https://api.github.com
+          summary_issue_token: ${{ secrets.MY_GITHUB_TOKEN }}
           project_number: 1
+          repository: ${{ github.repository }}
 ```
