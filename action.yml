@@ -5,16 +5,21 @@ branding:
   color: blue
 
 inputs:
-  token:
-    description: GitHub.com token for authentication.
-    required: true
-    default: ${{ github.token }}
-  other_tokens:
+  contribution_tokens_api_urls:
     description:
-      A comma-separated list of additional GitHub tokens for authentication. For
-      example, if you have separate account(s) for GitHub Enterprise Cloud -
-      Enterprise Managed User instance(s).
+      A newline-separated list of GitHub tokens and API URLs for authenticating
+      and getting contribution data. For example, if you have separate
+      account(s) for GitHub Enterprise Cloud and GitHub Enterprise Cloud with
+      Data Residency (ghe.com). The format for each entry is `token@api_url`,
+      where `api_url` is optional and defaults to `https://api.github.com`.
+    required: true
+  include_comments:
+    description:
+      Set this to true to include comment bodies in the prompt sent to OpenAI
+      (this can result in the context length being exceeded!). Defaults to
+      false.
     required: false
+    default: 'false'
   num_days:
     description: The number of days to look back. Defaults to 14.
     required: true
@@ -35,6 +40,18 @@ inputs:
       (Optional) OpenAI API token for generating the summary. This will be added
       as a comment to the issue that is created.
     required: false
+  summary_issue_api_url:
+    description:
+      The GitHub API URL to use for creating the summary issue. Defaults to
+      `https://api.github.com`.
+    required: true
+    default: https://api.github.com
+  summary_issue_token:
+    description:
+      GitHub.com authentication token with permissions to write issues (and
+      optionally projects). This is used to create the summary issue.
+    required: true
+    default: ${{ github.token }}
   project_number:
     description: (Optional) The project number to create the summary issue in.
     required: false
@@ -46,13 +63,6 @@ inputs:
       running this action, ensure the `token` input has sufficient permissions.'
     required: true
     default: ${{ github.repository }}
-  include_comments:
-    description:
-      Set this to true to include comment bodies in the prompt sent to OpenAI
-      (this can result in the context length being exceeded!). Defaults to
-      false.
-    required: false
-    default: 'false'
 
 runs:
   using: node20

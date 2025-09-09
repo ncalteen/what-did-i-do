@@ -39288,12 +39288,12 @@ function generatePullRequestReviewSummary(contributions) {
 /**
  * Get the contributions for the user.
  *
- * @param tokens A list of GitHub tokens.
+ * @param tokenMap A list of GitHub token and API URL pairs.
  * @param startDate ISO 8601 date.
  * @param includeComments Whether to include comments in the contributions.
  * @returns Object with the total contribution stats.
  */
-async function getContributions(tokens, startDate, includeComments) {
+async function getContributions(tokenMap, startDate, includeComments) {
     const contributions = {
         totalCommitContributions: 0,
         totalIssueContributions: 0,
@@ -39309,10 +39309,12 @@ async function getContributions(tokens, startDate, includeComments) {
         pullRequestReviewContributionsByRepository: {}
     };
     let count = 1;
-    for (const token of tokens) {
+    for (const tokenPair of tokenMap) {
         coreExports.startGroup(`Getting Contributions: Token #${count++}`);
         // Create the Octokit client
-        const octokit = githubExports.getOctokit(token);
+        const octokit = githubExports.getOctokit(tokenPair.token, {
+            baseUrl: tokenPair.apiUrl
+        });
         // Get the authenticated user
         const username = await getAuthenticatedUser(octokit);
         // Get contributions for this user with this client
@@ -39628,36 +39630,55 @@ octokit, repository, username, projectNumber) {
 
 async function run() {
     // Get the inputs
-    const githubToken = coreExports.getInput('token', { required: true });
-    const otherTokens = coreExports.getInput('other_tokens') === ''
-        ? []
-        : coreExports.getInput('other_tokens').split(',');
+    const contributionTokens = coreExports.getInput('contribution_tokens_api_urls', {
+        required: true,
+        trimWhitespace: true
+    });
     const numberOfDays = parseInt(coreExports.getInput('num_days', { required: true }));
-    const [owner, repository] = coreExports.getInput('repository', { required: true })
-        .split('/');
-    const projectNumber = coreExports.getInput('project_number') === ''
-        ? undefined
-        : parseInt(coreExports.getInput('project_number'));
     const openAIModel = coreExports.getInput('openai_model');
     const openAIProject = coreExports.getInput('openai_project');
     const openAIToken = coreExports.getInput('openai_token');
+    const summaryIssueApiUrl = coreExports.getInput('summary_issue_api_url', {
+        required: true,
+        trimWhitespace: true
+    });
+    const summaryIssueToken = coreExports.getInput('summary_issue_token', {
+        required: true,
+        trimWhitespace: true
+    });
+    const projectNumber = coreExports.getInput('project_number') === ''
+        ? undefined
+        : parseInt(coreExports.getInput('project_number'));
+    const [owner, repository] = coreExports.getInput('repository', { required: true })
+        .split('/');
     const includeComments = coreExports.getBooleanInput('include_comments');
     coreExports.info('Action Inputs:');
-    coreExports.info(`  Number of Days: ${numberOfDays}`);
     coreExports.info(`  Owner: ${owner}`);
     coreExports.info(`  Repository: ${repository}`);
+    coreExports.info(`  Number of Days: ${numberOfDays}`);
     coreExports.info(`  Project Number: ${projectNumber}`);
     coreExports.info(`  Include Comments: ${includeComments}`);
+    // Parse the tokens and API URLs
+    const contributionTokenMap = contributionTokens
+        .split('\n')
+        .map((line) => line.trim())
+        .filter((line) => line.length > 0)
+        .map((line) => {
+        const [token, apiUrl] = line.split('@').map((part) => part.trim());
+        return { token, apiUrl: apiUrl || 'https://api.github.com' };
+    });
     // Get the start and end dates based on the number of days input
     const startDate = new Date(new Date().getTime() - numberOfDays * 24 * 60 * 60 * 1000);
     const endDate = new Date();
     coreExports.info('Date Range:');
     coreExports.info(`  Start: ${startDate.toISOString()}`);
     coreExports.info(`  End: ${endDate.toISOString()}`);
-    const octokit = githubExports.getOctokit(githubToken);
+    const octokit = githubExports.getOctokit(summaryIssueToken, {
+        baseUrl: summaryIssueApiUrl
+    });
     const username = await getAuthenticatedUser(octokit);
     // Get the contributions for each token
-    const contributions = await getContributions([githubToken].concat(otherTokens), startDate, includeComments);
+    const contributions = await getContributions(contributionTokenMap, startDate, includeComments);
     // Generate markdown from the template
     const body = generateMarkdown(contributions, endDate, startDate, username);
     // Write the output to a new issue and assign to the project
