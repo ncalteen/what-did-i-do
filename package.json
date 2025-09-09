@@ -1,6 +1,6 @@
 {
   "name": "what-did-i-do",
-  "version": "4.0.0",
+  "version": "5.0.0",
   "author": "Nick Alteen <ncalteen@github.com>",
   "description": "A GitHub Action to generate a summary of your GitHub activity.",
   "private": true,

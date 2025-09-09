@@ -5,39 +5,83 @@ issue that contains a summary of contributions on GitHub.com over a certain time
 period. It can optionally leverage OpenAI to generate a summary of the
 contributions.
 
+## Version 5 Breaking Changes
+
+The inputs have been **heavily** modified in version 5. Please see the inputs
+section below, as well as the [`action.yml`](./action.yml) file for the full
+list of inputs.
+
+This change was made to support multiple GitHub tokens and API URLs, such as
+when working with multiple GitHub.com accounts (e.g. Enterprise Managed Users)
+or across API boundaries (e.g. `ghe.com`).
+
 ## Inputs
 
-- `token`
-  - Default: `${{ secrets.GITHUB_TOKEN }}`
-  - Description: GitHub.com authentication token
-- `other_tokens`
-  - Description: Comma-separated list of additional GitHub.com tokens
-- `num_days`
-  - Default: `14`
-  - Description: Number of days to look back
-- `openai_model`
-  - Default: `gpt-4o-mini`
-  - Description: OpenAI model to use for generating the summary
-- `openai_project`
-  - Description: OpenAI project to use for generating the summary
-- `openai_token`
-  - Description: OpenAI authentication token for generating the summary
-- `project_number`
-  - Description: (Optional) GitHub project number to add the issue to.
-- `repository`
-  - Default: `${{ github.repository }}`
-  - Description: The repository to create the summary issue in (`owner/name`
-    format)
+- `contribution_tokens_api_urls`
+
+  A newline-separated list of GitHub tokens and API URLs for authentication. For
+  example, if you have separate account(s) for GitHub Enterprise Cloud and
+  GitHub Enterprise Cloud with Data Residency (ghe.com). The format for each
+  entry is `token@api_url`, where `api_url` is optional and defaults to
+  `https://api.github.com`.
+
+  ```plain
+  DOTCOM_TOKEN@https://api.github.com
+  GHE_TOKEN@https://api.mycompany.ghe.com
+  EMU_TOKEN@https://api.github.com
+  ```
+
 - `include_comments`
-  - Default: `false`
-  - Description: Include comments in the OpenAI prompt (this can cause the
-    context window to be exceeded!)
+
+  Set this to true to include comment bodies in the prompt sent to OpenAI (this
+  can result in the context length being exceeded!). Defaults to false.
+
+- `num_days`
+
+  The number of days to look back. Defaults to 14.
+
+- `openai_model`
+
+  (Optional) OpenAI API model for generating the summary. This will be added as
+  a comment to the issue that is created. Defaults to `gpt-4o-mini`.
+
+- `openai_project`
+
+  (Optional) OpenAI API project for generating the summary. This will be added
+  as a comment to the issue that is created.
+
+- `openai_token`
+
+  (Optional) OpenAI API token for generating the summary. This will be added as
+  a comment to the issue that is created.
+
+- `summary_issue_api_url`
+
+  The GitHub API URL to use for creating the summary issue. Defaults to
+  `https://api.github.com`.
+
+- `summary_issue_token`
+
+  GitHub.com authentication token with permissions to write issues (and
+  optionally projects). This is used to create the summary issue.
+
+- `project_number`
+
+  (Optional) The project number to create the summary issue in.
+
+- `repository`
+
+  The owner and repository to create the summary issue in. Defaults to the
+  repository where this action is invoked. Format: `owner/repo.` If you want to
+  create the issue in a different repository than the one where you are running
+  this action, ensure the `token` input has sufficient permissions.'
 
 > [!NOTE]
 >
 > _Why would I need multiple tokens?_ In situations where you work across
-> multiple GitHub.com accounts (e.g. with Enterprise Managed Users), you may
-> need to provide additional tokens to access contributions across all accounts.
+> multiple GitHub.com accounts (e.g. with Enterprise Managed Users) or across
+> API boundaries (e.g. `ghe.com`), you may need to provide additional tokens to
+> access contributions across all accounts.
 
 The token permissions should include the following:
 
@@ -74,8 +118,9 @@ jobs:
         id: report
         uses: ncalteen/what-did-i-do@vX.Y.Z
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          other_tokens: '${{ secrets.TOKEN_1 }},${{ secrets.TOKEN_2 }}'
+          tokens_and_api_urls: |
+            ${{ secrets.MY_GHEC_TOKEN }}@https://api.github.com
+            ${{ secrets.MY_GHE_TOKEN }}@https://api.mycompany.ghe.com
           num_days: 14
           repository: ncalteen/todo
           project_number: 1

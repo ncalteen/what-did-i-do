@@ -16,13 +16,16 @@ import type {
 /**
  * Get the contributions for the user.
  *
- * @param tokens A list of GitHub tokens.
+ * @param tokenMap A list of GitHub token and API URL pairs.
  * @param startDate ISO 8601 date.
  * @param includeComments Whether to include comments in the contributions.
  * @returns Object with the total contribution stats.
  */
 export async function getContributions(
-  tokens: string[],
+  tokenMap: {
+    token: string
+    apiUrl: string
+  }[],
   startDate: Date,
   includeComments: boolean
 ): Promise<Contributions> {
@@ -42,11 +45,13 @@ export async function getContributions(
   }
 
   let count = 1
-  for (const token of tokens) {
+  for (const tokenPair of tokenMap) {
     core.startGroup(`Getting Contributions: Token #${count++}`)
 
     // Create the Octokit client
-    const octokit = github.getOctokit(token)
+    const octokit = github.getOctokit(tokenPair.token, {
+      baseUrl: tokenPair.apiUrl
+    })
 
     // Get the authenticated user
     const username = await graphql.getAuthenticatedUser(octokit)
