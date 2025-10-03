@@ -31469,7 +31469,7 @@ const safeJSON = (text) => {
 // File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
-const VERSION = '5.16.0'; // x-release-please-version
+const VERSION = '6.0.0'; // x-release-please-version
 
 // File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
 const isRunningInBrowser = () => {
@@ -34872,15 +34872,18 @@ class TranscriptionSessions extends APIResource {
 }
 
 // File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
-class Realtime extends APIResource {
+/**
+ * @deprecated Realtime has now launched and is generally available. The old beta API is now deprecated.
+ */
+let Realtime$1 = class Realtime extends APIResource {
     constructor() {
         super(...arguments);
         this.sessions = new Sessions(this._client);
         this.transcriptionSessions = new TranscriptionSessions(this._client);
     }
-}
-Realtime.Sessions = Sessions;
-Realtime.TranscriptionSessions = TranscriptionSessions;
+};
+Realtime$1.Sessions = Sessions;
+Realtime$1.TranscriptionSessions = TranscriptionSessions;
 
 // File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
 /**
@@ -35818,12 +35821,12 @@ Threads.Messages = Messages;
 class Beta extends APIResource {
     constructor() {
         super(...arguments);
-        this.realtime = new Realtime(this._client);
+        this.realtime = new Realtime$1(this._client);
         this.assistants = new Assistants(this._client);
         this.threads = new Threads(this._client);
     }
 }
-Beta.Realtime = Realtime;
+Beta.Realtime = Realtime$1;
 Beta.Assistants = Assistants;
 Beta.Threads = Threads;
 
@@ -35973,23 +35976,23 @@ class Conversations extends APIResource {
     /**
      * Create a conversation.
      */
-    create(body, options) {
+    create(body = {}, options) {
         return this._client.post('/conversations', { body, ...options });
     }
     /**
-     * Get a conversation with the given ID.
+     * Get a conversation
      */
     retrieve(conversationID, options) {
         return this._client.get(path `/conversations/${conversationID}`, options);
     }
     /**
-     * Update a conversation's metadata with the given ID.
+     * Update a conversation
      */
     update(conversationID, body, options) {
         return this._client.post(path `/conversations/${conversationID}`, { body, ...options });
     }
     /**
-     * Delete a conversation with the given ID.
+     * Delete a conversation. Items in the conversation will not be deleted.
      */
     delete(conversationID, options) {
         return this._client.delete(path `/conversations/${conversationID}`, options);
@@ -36584,6 +36587,25 @@ class Moderations extends APIResource {
     }
 }
 
+// File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
+class ClientSecrets extends APIResource {
+    /**
+     * Create a Realtime client secret with an associated session configuration.
+     */
+    create(body, options) {
+        return this._client.post('/realtime/client_secrets', { body, ...options });
+    }
+}
+
+// File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
+class Realtime extends APIResource {
+    constructor() {
+        super(...arguments);
+        this.clientSecrets = new ClientSecrets(this._client);
+    }
+}
+Realtime.ClientSecrets = ClientSecrets;
+
 function maybeParseResponse(response, params) {
     if (!params || !hasAutoParseableInput(params)) {
         return {
@@ -36834,8 +36856,16 @@ class ResponseStream extends EventStream {
                 if (!output) {
                     throw new OpenAIError(`missing output at index ${event.output_index}`);
                 }
-                if (output.type === 'message') {
-                    output.content.push(event.part);
+                const type = output.type;
+                const part = event.part;
+                if (type === 'message' && part.type !== 'reasoning_text') {
+                    output.content.push(part);
+                }
+                else if (type === 'reasoning' && part.type === 'reasoning_text') {
+                    if (!output.content) {
+                        output.content = [];
+                    }
+                    output.content.push(part);
                 }
                 break;
             }
@@ -36863,6 +36893,23 @@ class ResponseStream extends EventStream {
                 }
                 if (output.type === 'function_call') {
                     output.arguments += event.delta;
+                }
+                break;
+            }
+            case 'response.reasoning_text.delta': {
+                const output = snapshot.output[event.output_index];
+                if (!output) {
+                    throw new OpenAIError(`missing output at index ${event.output_index}`);
+                }
+                if (output.type === 'reasoning') {
+                    const content = output.content?.[event.content_index];
+                    if (!content) {
+                        throw new OpenAIError(`missing content at index ${event.content_index}`);
+                    }
+                    if (content.type !== 'reasoning_text') {
+                        throw new OpenAIError(`expected content to be 'reasoning_text', got ${content.type}`);
+                    }
+                    content.text += event.delta;
                 }
                 break;
             }
@@ -37590,11 +37637,12 @@ class OpenAI {
         this.batches = new Batches(this);
         this.uploads = new Uploads(this);
         this.responses = new Responses(this);
+        this.realtime = new Realtime(this);
         this.conversations = new Conversations(this);
         this.evals = new Evals(this);
         this.containers = new Containers(this);
         if (apiKey === undefined) {
-            throw new OpenAIError("The OPENAI_API_KEY environment variable is missing or empty; either provide it, or instantiate the OpenAI client with an apiKey option, like new OpenAI({ apiKey: 'My API Key' }).");
+            throw new OpenAIError('Missing credentials. Please pass an `apiKey`, or set the `OPENAI_API_KEY` environment variable.');
         }
         const options = {
             apiKey,
@@ -37622,7 +37670,7 @@ class OpenAI {
         this.fetch = options.fetch ?? getDefaultFetch();
         __classPrivateFieldSet(this, _OpenAI_encoder, FallbackEncoder);
         this._options = options;
-        this.apiKey = apiKey;
+        this.apiKey = typeof apiKey === 'string' ? apiKey : 'Missing Key';
         this.organization = organization;
         this.project = project;
         this.webhookSecret = webhookSecret;
@@ -37669,6 +37717,27 @@ class OpenAI {
     makeStatusError(status, error, message, headers) {
         return APIError.generate(status, error, message, headers);
     }
+    async _callApiKey() {
+        const apiKey = this._options.apiKey;
+        if (typeof apiKey !== 'function')
+            return false;
+        let token;
+        try {
+            token = await apiKey();
+        }
+        catch (err) {
+            if (err instanceof OpenAIError)
+                throw err;
+            throw new OpenAIError(`Failed to get token from 'apiKey' function: ${err.message}`, 
+            // @ts-ignore
+            { cause: err });
+        }
+        if (typeof token !== 'string' || !token) {
+            throw new OpenAIError(`Expected 'apiKey' function argument to return a string but it returned ${token}`);
+        }
+        this.apiKey = token;
+        return true;
+    }
     buildURL(path, query, defaultBaseURL) {
         const baseURL = (!__classPrivateFieldGet(this, _OpenAI_instances, "m", _OpenAI_baseURLOverridden).call(this) && defaultBaseURL) || this.baseURL;
         const url = isAbsoluteURL(path) ?
@@ -37686,7 +37755,9 @@ class OpenAI {
     /**
      * Used as a callback for mutating the given `FinalRequestOptions` object.
      */
-    async prepareOptions(options) { }
+    async prepareOptions(options) {
+        await this._callApiKey();
+    }
     /**
      * Used as a callback for mutating the given `RequestInit` object.
      *
@@ -37745,7 +37816,7 @@ class OpenAI {
         const controller = new AbortController();
         const response = await this.fetchWithTimeout(url, req, timeout, controller).catch(castToError);
         const headersTime = Date.now();
-        if (response instanceof Error) {
+        if (response instanceof globalThis.Error) {
             const retryMessage = `retrying, ${retriesRemaining} attempts remaining`;
             if (options.signal?.aborted) {
                 throw new APIUserAbortError();
@@ -38036,6 +38107,7 @@ OpenAI.Beta = Beta;
 OpenAI.Batches = Batches;
 OpenAI.Uploads = Uploads;
 OpenAI.Responses = Responses;
+OpenAI.Realtime = Realtime;
 OpenAI.Conversations = Conversations;
 OpenAI.Evals = Evals;
 OpenAI.Containers = Containers;
