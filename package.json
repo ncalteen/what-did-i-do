@@ -45,7 +45,7 @@
     "@octokit/plugin-retry": "^8.0.3",
     "@octokit/plugin-throttling": "^11.0.3",
     "@octokit/rest": "^22.0.1",
-    "ajv": "^8.17.1",
+    "ajv": "^8.18.0",
     "jsonc": "^2.0.0",
     "mustache": "^4.2.0",
     "openai": "^6.0.0",
