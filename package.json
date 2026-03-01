@@ -40,7 +40,7 @@
     "@actions/exec": "^1.1.1",
     "@actions/github": "^6.0.1",
     "@actions/glob": "^0.5.0",
-    "@actions/io": "^2.0.0",
+    "@actions/io": "^3.0.2",
     "@octokit/plugin-rest-endpoint-methods": "^16.1.0",
     "@octokit/plugin-retry": "^8.0.3",
     "@octokit/plugin-throttling": "^11.0.3",
